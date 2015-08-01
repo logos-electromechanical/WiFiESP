@@ -17,15 +17,14 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef Server_Drv_h
-#define Server_Drv_h
+#ifndef Server_ESP_Drv_h
+#define Server_ESP_Drv_h
 
 #include <inttypes.h>
-#include "utility/wifi_spi.h"
 
 typedef enum eProtMode {TCP_MODE, UDP_MODE}tProtMode;
 
-class ServerDrv
+class ServerESPDrv
 {
 public:
 
@@ -55,6 +54,6 @@ public:
     static uint8_t checkDataSent(uint8_t sock);
 };
 
-extern ServerDrv serverDrv;
+extern ServerESPDrv serverESPDrv;
 
 #endif

@@ -17,11 +17,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef WiFi_Drv_h
-#define WiFi_Drv_h
+#ifndef WiFi_ESP_Drv_h
+#define WiFi_ESP_Drv_h
 
 #include <inttypes.h>
-#include "utility/wifi_spi.h"
 #include "IPAddress.h"
 #include "WiFiUdp.h"
 
@@ -32,7 +31,7 @@
 // firmware version string length
 #define WL_FW_VER_LENGTH 6
 
-class WiFiDrv
+class WiFiESPDrv
 {
 private:
 	// settings of requested network
@@ -262,6 +261,6 @@ public:
 
 };
 
-extern WiFiDrv wiFiDrv;
+extern WiFiESPDrv WiFiESPDrv;
 
 #endif
