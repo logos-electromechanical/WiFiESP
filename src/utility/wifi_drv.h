@@ -36,16 +36,16 @@ class WiFiESPDrv
 {
 private:
 	// settings of requested network
-	static char 	_networkSsid[WL_NETWORKS_LIST_MAXNUM][WL_SSID_MAX_LENGTH];
+	static String 	_networkSsid[WL_NETWORKS_LIST_MAXNUM];
 	static int32_t 	_networkRssi[WL_NETWORKS_LIST_MAXNUM];
 	static uint8_t 	_networkEncr[WL_NETWORKS_LIST_MAXNUM];
+	static uint8_t	_networkCount;
 
 	// firmware version string in the format a.b.c
-	static char 	fwVersion[WL_FW_VER_LENGTH];
+	static String 	fwVersion;
 
 	// settings of current selected network
-	static uint8_t 	_muxID;
-	static char 	_ssid[WL_SSID_MAX_LENGTH];
+	static String 	_ssid;
 	static uint8_t 	_bssid[WL_MAC_ADDR_LENGTH];
 	static uint8_t 	_mac[WL_MAC_ADDR_LENGTH];
 	static uint8_t  _localIp[WL_IPV4_LENGTH];
@@ -85,19 +85,6 @@ public:
      * return: WL_SUCCESS or WL_FAILURE
      */
     static int8_t wifiSetPassphrase(char* ssid, uint8_t ssid_len, const char *passphrase, const uint8_t len);
-
-    /* Start Wifi connection with WEP encryption.
-     * Configure a key into the device. The key type (WEP-40, WEP-104)
-     * is determined by the size of the key (5 bytes for WEP-40, 13 bytes for WEP-104).
-     *
-     * param ssid: Pointer to the SSID string.
-     * param ssid_len: Lenght of ssid string.
-     * param key_idx: The key index to set. Valid values are 0-3.
-     * param key: Key input buffer.
-     * param len: Lenght of key string.
-     * return: Since the ESP8266 does not support WEP, this always returns WL_FAILURE
-     */
-    static int8_t wifiSetKey(char* ssid, uint8_t ssid_len, uint8_t key_idx, const void *key, const uint8_t len);
 
     /* Set ip configuration disabling dhcp client
         *

@@ -38,7 +38,7 @@ WiFiESPClass::WiFiESPClass()
 
 void WiFiESPClass::init()
 {
-    WiFiESPDrv::wifiDriverInit();
+    wifiESPDrv::wifiDriverInit();
 }
 
 uint8_t WiFiESPClass::getSocket()
@@ -55,7 +55,7 @@ uint8_t WiFiESPClass::getSocket()
 
 char* WiFiESPClass::firmwareVersion()
 {
-	return WiFiESPDrv::getFwVersion();
+	return wifiESPDrv::getFwVersion();
 }
 
 int WiFiESPClass::begin(char* ssid)
@@ -63,35 +63,16 @@ int WiFiESPClass::begin(char* ssid)
 	uint8_t status = WL_IDLE_STATUS;
 	uint8_t attempts = WL_MAX_ATTEMPT_CONNECTION;
 
-   if (WiFiESPDrv::wifiSetNetwork(ssid, strlen(ssid)) != WL_FAILURE)
+   if (wifiESPDrv::wifiSetNetwork(ssid, strlen(ssid)) != WL_FAILURE)
    {
 	   do
 	   {
 		   delay(WL_DELAY_START_CONNECTION);
-		   status = WiFiESPDrv::getConnectionStatus();
+		   status = wifiESPDrv::getConnectionStatus();
 	   }
 	   while ((( status == WL_IDLE_STATUS)||(status == WL_SCAN_COMPLETED))&&(--attempts>0));
    }else
    {
-	   status = WL_CONNECT_FAILED;
-   }
-   return status;
-}
-
-int WiFiESPClass::begin(char* ssid, uint8_t key_idx, const char *key)
-{
-	uint8_t status = WL_IDLE_STATUS;
-	uint8_t attempts = WL_MAX_ATTEMPT_CONNECTION;
-
-	// set encryption key
-   if (WiFiESPDrv::wifiSetKey(ssid, strlen(ssid), key_idx, key, strlen(key)) != WL_FAILURE)
-   {
-	   do
-	   {
-		   delay(WL_DELAY_START_CONNECTION);
-		   status = WiFiESPDrv::getConnectionStatus();
-	   }while ((( status == WL_IDLE_STATUS)||(status == WL_SCAN_COMPLETED))&&(--attempts>0));
-   }else{
 	   status = WL_CONNECT_FAILED;
    }
    return status;
@@ -103,12 +84,12 @@ int WiFiESPClass::begin(char* ssid, const char *passphrase)
 	uint8_t attempts = WL_MAX_ATTEMPT_CONNECTION;
 
     // set passphrase
-    if (WiFiESPDrv::wifiSetPassphrase(ssid, strlen(ssid), passphrase, strlen(passphrase))!= WL_FAILURE)
+    if (wifiESPDrv::wifiSetPassphrase(ssid, strlen(ssid), passphrase, strlen(passphrase))!= WL_FAILURE)
     {
  	   do
  	   {
  		   delay(WL_DELAY_START_CONNECTION);
- 		   status = WiFiESPDrv::getConnectionStatus();
+ 		   status = wifiESPDrv::getConnectionStatus();
  	   }
 	   while ((( status == WL_IDLE_STATUS)||(status == WL_SCAN_COMPLETED))&&(--attempts>0));
     }else{
@@ -119,45 +100,45 @@ int WiFiESPClass::begin(char* ssid, const char *passphrase)
 
 void WiFiESPClass::config(IPAddress local_ip)
 {
-	WiFiESPDrv::config(1, (uint32_t)local_ip, 0, 0);
+	wifiESPDrv::config(1, (uint32_t)local_ip, 0, 0);
 }
 
 void WiFiESPClass::config(IPAddress local_ip, IPAddress dns_server)
 {
-	WiFiESPDrv::config(1, (uint32_t)local_ip, 0, 0);
-	WiFiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
+	wifiESPDrv::config(1, (uint32_t)local_ip, 0, 0);
+	wifiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
 }
 
 void WiFiESPClass::config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway)
 {
-	WiFiESPDrv::config(2, (uint32_t)local_ip, (uint32_t)gateway, 0);
-	WiFiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
+	wifiESPDrv::config(2, (uint32_t)local_ip, (uint32_t)gateway, 0);
+	wifiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
 }
 
 void WiFiESPClass::config(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
 {
-	WiFiESPDrv::config(3, (uint32_t)local_ip, (uint32_t)gateway, (uint32_t)subnet);
-	WiFiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
+	wifiESPDrv::config(3, (uint32_t)local_ip, (uint32_t)gateway, (uint32_t)subnet);
+	wifiESPDrv::setDNS(1, (uint32_t)dns_server, 0);
 }
 
 void WiFiESPClass::setDNS(IPAddress dns_server1)
 {
-	WiFiESPDrv::setDNS(1, (uint32_t)dns_server1, 0);
+	wifiESPDrv::setDNS(1, (uint32_t)dns_server1, 0);
 }
 
 void WiFiESPClass::setDNS(IPAddress dns_server1, IPAddress dns_server2)
 {
-	WiFiESPDrv::setDNS(2, (uint32_t)dns_server1, (uint32_t)dns_server2);
+	wifiESPDrv::setDNS(2, (uint32_t)dns_server1, (uint32_t)dns_server2);
 }
 
 int WiFiESPClass::disconnect()
 {
-    return WiFiESPDrv::disconnect();
+    return wifiESPDrv::disconnect();
 }
 
 uint8_t* WiFiESPClass::macAddress(uint8_t* mac)
 {
-	uint8_t* _mac = WiFiESPDrv::getMacAddress();
+	uint8_t* _mac = wifiESPDrv::getMacAddress();
 	memcpy(mac, _mac, WL_MAC_ADDR_LENGTH);
     return mac;
 }
@@ -165,44 +146,44 @@ uint8_t* WiFiESPClass::macAddress(uint8_t* mac)
 IPAddress WiFiESPClass::localIP()
 {
 	IPAddress ret;
-	WiFiESPDrv::getIpAddress(ret);
+	wifiESPDrv::getIpAddress(ret);
 	return ret;
 }
 
 IPAddress WiFiESPClass::subnetMask()
 {
 	IPAddress ret;
-	WiFiESPDrv::getSubnetMask(ret);
+	wifiESPDrv::getSubnetMask(ret);
 	return ret;
 }
 
 IPAddress WiFiESPClass::gatewayIP()
 {
 	IPAddress ret;
-	WiFiESPDrv::getGatewayIP(ret);
+	wifiESPDrv::getGatewayIP(ret);
 	return ret;
 }
 
 char* WiFiESPClass::SSID()
 {
-    return WiFiESPDrv::getCurrentSSID();
+    return wifiESPDrv::getCurrentSSID();
 }
 
 uint8_t* WiFiESPClass::BSSID(uint8_t* bssid)
 {
-	uint8_t* _bssid = WiFiESPDrv::getCurrentBSSID();
+	uint8_t* _bssid = wifiESPDrv::getCurrentBSSID();
 	memcpy(bssid, _bssid, WL_MAC_ADDR_LENGTH);
     return bssid;
 }
 
 int32_t WiFiESPClass::RSSI()
 {
-    return WiFiESPDrv::getCurrentRSSI();
+    return wifiESPDrv::getCurrentRSSI();
 }
 
 uint8_t WiFiESPClass::encryptionType()
 {
-    return WiFiESPDrv::getCurrentEncryptionType();
+    return wifiESPDrv::getCurrentEncryptionType();
 }
 
 
@@ -211,12 +192,12 @@ int8_t WiFiESPClass::scanNetworks()
 	uint8_t attempts = 10;
 	uint8_t numOfNetworks = 0;
 
-	if (WiFiESPDrv::startScanNetworks() == WL_FAILURE)
+	if (wifiESPDrv::startScanNetworks() == WL_FAILURE)
 		return WL_FAILURE;
  	do
  	{
  		delay(2000);
- 		numOfNetworks = WiFiESPDrv::getScanNetworks();
+ 		numOfNetworks = wifiESPDrv::getScanNetworks();
  	}
 	while (( numOfNetworks == 0)&&(--attempts>0));
 	return numOfNetworks;
@@ -224,27 +205,27 @@ int8_t WiFiESPClass::scanNetworks()
 
 char* WiFiESPClass::SSID(uint8_t networkItem)
 {
-	return WiFiESPDrv::getSSIDNetoworks(networkItem);
+	return wifiESPDrv::getSSIDNetoworks(networkItem);
 }
 
 int32_t WiFiESPClass::RSSI(uint8_t networkItem)
 {
-	return WiFiESPDrv::getRSSINetoworks(networkItem);
+	return wifiESPDrv::getRSSINetoworks(networkItem);
 }
 
 uint8_t WiFiESPClass::encryptionType(uint8_t networkItem)
 {
-    return WiFiESPDrv::getEncTypeNetowrks(networkItem);
+    return wifiESPDrv::getEncTypeNetowrks(networkItem);
 }
 
 uint8_t WiFiESPClass::status()
 {
-    return WiFiESPDrv::getConnectionStatus();
+    return wifiESPDrv::getConnectionStatus();
 }
 
 int WiFiESPClass::hostByName(const char* aHostname, IPAddress& aResult)
 {
-	return WiFiESPDrv::getHostByName(aHostname, aResult);
+	return wifiESPDrv::getHostByName(aHostname, aResult);
 }
 
 WiFiESPClass WiFi;

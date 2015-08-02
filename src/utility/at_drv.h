@@ -93,11 +93,13 @@ class ATDrvClass {
     bool sATCWMODE(uint8_t mode,uint8_t pattern=3);
     bool qATCWJAP(String &ssid,uint8_t pattern=3) ;
     bool sATCWJAP(String ssid, String pwd,uint8_t pattern=3);
+	bool eATCWQAP(void);
     bool eATCWLAP(String &list);
     bool qATCWDHCP(uint8_t *mode, uint8_t *en, uint8_t pattern=3); 
     bool sATCWDHCP(uint8_t mode, uint8_t en, uint8_t pattern=3);
     bool qATCIPSTAMAC(String &mac, uint8_t pattern=3);
     bool qATCIPSTAIP(String &ip, uint8_t pattern=3);
+	bool sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet, uint8_t pattern);
     bool eATCIPSTATUS(String &list);
     bool sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port);
     bool sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t len);

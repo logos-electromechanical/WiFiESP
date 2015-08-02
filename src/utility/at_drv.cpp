@@ -22,6 +22,7 @@
  */
  
 #include "utility/at_drv.h"
+#include <IPAddress.h>
 #include <avr/pgmspace.h>
 
 #define LOG_OUTPUT_DEBUG            (1)
@@ -392,9 +393,18 @@ bool ATDrvClass::sATCWJAP(String ssid, String pwd,uint8_t pattern)
     return false;
 }
 
+bool ATDrvClass::eATCWQAP(void) {
+	bool ret = false;
+	IPDenable = false;
+    rx_empty();
+    m_puart->println(F("AT+CWQAP"));
+    ret = recvFind("OK");
+	IPDenable = true;
+    return ret;
+}
+
 bool ATDrvClass::eATCWLAP(String &list) 
 {
-    String data;
 	bool ret = false;
 	IPDenable = false;
     rx_empty();
@@ -519,6 +529,58 @@ bool ATDrvClass::qATCIPSTAIP(String &ip, uint8_t pattern)
 
     }
     ret = recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", ip, WL_AT_TIMEOUT);
+	IPDenable = true;
+    return ret;
+}
+
+bool ATDrvClass::sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet, uint8_t pattern)
+{
+	bool ret = false;
+	String ip;
+	IPAddress _local_ip_ = IPAddress(local_ip);
+	IPAddress _gateway_ = IPAddress(gateway);
+	IPAddress _subnet_ = IPAddress(subnet);
+	IPDenable = false;
+    rx_empty();
+    if (!pattern) {
+        return false;
+    }
+    switch(pattern){
+         case ESP_AT_CUR:
+            m_puart->print(F("AT+CIPSTA_DEF=\""));
+
+            break;
+        case ESP_AT_DEF:
+            m_puart->print(F("AT+CIPSTA_CUR=\""));
+            break;
+        default:
+            m_puart->print(F("AT+CIPSTA=\""));
+    }
+	switch (validParams) {
+		case 1:
+			_local_ip_.printTo(m_puart);
+			m_puart->println(F("\""));
+			break;
+		case 2:
+			_local_ip_.printTo(m_puart);
+			m_puart->print(F("\",\""));
+			_gateway_.printTo(m_puart);
+			m_puart->println(F("\""));
+			break;
+		case 3:
+			_local_ip_.printTo(m_puart);
+			m_puart->print(F("\",\""));
+			_gateway_.printTo(m_puart);
+			m_puart->print(F("\",\""));
+			_subnet_.printTo(m_puart);
+			m_puart->println(F("\""));
+			break;
+		default:
+			m_puart->println(F(""));
+			IPDenable = true;
+			return false;
+	}
+    ret = recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", &ip, WL_AT_TIMEOUT);
 	IPDenable = true;
     return ret;
 }
