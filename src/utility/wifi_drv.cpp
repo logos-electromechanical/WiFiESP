@@ -22,422 +22,133 @@
 #include <stdint.h>
 
 #include "Arduino.h"
-#include "utility/spi_drv.h"
 #include "utility/wifi_drv.h"
+#include "utility/at_drv.h"
 
 #define _DEBUG_
 
 extern "C" {
-#include "utility/wifi_spi.h"
 #include "utility/wl_types.h"
 #include "utility/debug.h"
 }
 
 // Array of data to cache the information related to the networks discovered
-char 	WiFiDrv::_networkSsid[][WL_SSID_MAX_LENGTH] = {{"1"},{"2"},{"3"},{"4"},{"5"}};
-int32_t WiFiDrv::_networkRssi[WL_NETWORKS_LIST_MAXNUM] = { 0 };
-uint8_t WiFiDrv::_networkEncr[WL_NETWORKS_LIST_MAXNUM] = { 0 };
+char 	WiFiESPDrv::_networkSsid[][WL_SSID_MAX_LENGTH] = {{"1"},{"2"},{"3"},{"4"},{"5"}};
+int32_t WiFiESPDrv::_networkRssi[WL_NETWORKS_LIST_MAXNUM] = { 0 };
+uint8_t WiFiESPDrv::_networkEncr[WL_NETWORKS_LIST_MAXNUM] = { 0 };
 
 // Cached values of retrieved data
-char 	WiFiDrv::_ssid[] = {0};
-uint8_t	WiFiDrv::_bssid[] = {0};
-uint8_t WiFiDrv::_mac[] = {0};
-uint8_t WiFiDrv::_localIp[] = {0};
-uint8_t WiFiDrv::_subnetMask[] = {0};
-uint8_t WiFiDrv::_gatewayIp[] = {0};
+char 	WiFiESPDrv::_ssid[] = {0};
+uint8_t	WiFiESPDrv::_bssid[] = {0};
+uint8_t WiFiESPDrv::_mac[] = {0};
+uint8_t WiFiESPDrv::_localIp[] = {0};
+uint8_t WiFiESPDrv::_subnetMask[] = {0};
+uint8_t WiFiESPDrv::_gatewayIp[] = {0};
+
 // Firmware version
-char    WiFiDrv::fwVersion[] = {0};
+char    WiFiESPDrv::fwVersion[] = {0};
 
-
-// Private Methods
-
-void WiFiDrv::getNetworkData(uint8_t *ip, uint8_t *mask, uint8_t *gwip)
-{
-    tParam params[PARAM_NUMS_3] = { {0, (char*)ip}, {0, (char*)mask}, {0, (char*)gwip}};
-
-    WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_IPADDR_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, sizeof(_dummy), LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    SpiDrv::waitResponseParams(GET_IPADDR_CMD, PARAM_NUMS_3, params);
-
-    SpiDrv::spiSlaveDeselect();
-}
-
-void WiFiDrv::getRemoteData(uint8_t sock, uint8_t *ip, uint8_t *port)
-{
-    tParam params[PARAM_NUMS_2] = { {0, (char*)ip}, {0, (char*)port} };
-
-    WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_REMOTE_DATA_CMD, PARAM_NUMS_1);
-    SpiDrv::sendParam(&sock, sizeof(sock), LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    SpiDrv::waitResponseParams(GET_REMOTE_DATA_CMD, PARAM_NUMS_2, params);
-
-    SpiDrv::spiSlaveDeselect();
-}
-
+// AT driver
+ATDrvClass WiFiESPDrv::_esp = ATDrvClass(&WL_AT_DEVICE, WL_AT_BAUD);
 
 // Public Methods
 
-
-void WiFiDrv::wifiDriverInit()
+void WiFiESPDrv::wifiDriverInit()
 {
-    SpiDrv::begin();
+	// Check that the ESP chip is active & reboot if not
+	// Put ESP into station mode & activate DHCP
+	// Turn on the mux for multiple connections
 }
 
-int8_t WiFiDrv::wifiSetNetwork(char* ssid, uint8_t ssid_len)
+int8_t WiFiESPDrv::wifiSetNetwork(char* ssid, uint8_t ssid_len)
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(SET_NET_CMD, PARAM_NUMS_1);
-    SpiDrv::sendParam((uint8_t*)ssid, ssid_len, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(SET_NET_CMD, PARAM_NUMS_1, &_data, &_dataLen))
-    {
-        WARN("error waitResponse");
-        _data = WL_FAILURE;
-    }
-    SpiDrv::spiSlaveDeselect();
-
-    return(_data == WIFI_SPI_ACK) ? WL_SUCCESS : WL_FAILURE;
+	// Set target network
 }
 
-int8_t WiFiDrv::wifiSetPassphrase(char* ssid, uint8_t ssid_len, const char *passphrase, const uint8_t len)
+int8_t WiFiESPDrv::wifiSetPassphrase(char* ssid, uint8_t ssid_len, const char *passphrase, const uint8_t len)
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(SET_PASSPHRASE_CMD, PARAM_NUMS_2);
-    SpiDrv::sendParam((uint8_t*)ssid, ssid_len, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)passphrase, len, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(SET_PASSPHRASE_CMD, PARAM_NUMS_1, &_data, &_dataLen))
-    {
-        WARN("error waitResponse");
-        _data = WL_FAILURE;
-    }
-    SpiDrv::spiSlaveDeselect();
-    return _data;
+	// connect to named AP with AT+CWJAP_CUR and the given passphrase
 }
 
-
-int8_t WiFiDrv::wifiSetKey(char* ssid, uint8_t ssid_len, uint8_t key_idx, const void *key, const uint8_t len)
+int8_t WiFiESPDrv::wifiSetKey(char* ssid, uint8_t ssid_len, uint8_t key_idx, const void *key, const uint8_t len)
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(SET_KEY_CMD, PARAM_NUMS_3);
-    SpiDrv::sendParam((uint8_t*)ssid, ssid_len, NO_LAST_PARAM);
-    SpiDrv::sendParam(&key_idx, KEY_IDX_LEN, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)key, len, LAST_PARAM);
-    
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(SET_KEY_CMD, PARAM_NUMS_1, &_data, &_dataLen))
-    {
-        WARN("error waitResponse");
-        _data = WL_FAILURE;
-    }
-    SpiDrv::spiSlaveDeselect();
-    return _data;
+	// Since the ESP doesn't support WEP, this always fails
+	return WL_FAILURE;
 }
 
-void WiFiDrv::config(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet)
+void WiFiESPDrv::config(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet)
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(SET_IP_CONFIG_CMD, PARAM_NUMS_4);
-    SpiDrv::sendParam((uint8_t*)&validParams, 1, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)&local_ip, 4, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)&gateway, 4, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)&subnet, 4, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(SET_IP_CONFIG_CMD, PARAM_NUMS_1, &_data, &_dataLen))
-    {
-        WARN("error waitResponse");
-        _data = WL_FAILURE;
-    }
-    SpiDrv::spiSlaveDeselect();
+	// use AT+CIPSTA_CUR to set local IP, gateway, and subnet, as requested
 }
 
-void WiFiDrv::setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_server2)
+void WiFiESPDrv::setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_server2)
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(SET_DNS_CONFIG_CMD, PARAM_NUMS_3);
-    SpiDrv::sendParam((uint8_t*)&validParams, 1, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)&dns_server1, 4, NO_LAST_PARAM);
-    SpiDrv::sendParam((uint8_t*)&dns_server2, 4, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(SET_DNS_CONFIG_CMD, PARAM_NUMS_1, &_data, &_dataLen))
-    {
-        WARN("error waitResponse");
-        _data = WL_FAILURE;
-    }
-    SpiDrv::spiSlaveDeselect();
+	// The DNS servers are set in firmware, so this is a no-op
 }
 
-
-                        
-int8_t WiFiDrv::disconnect()
+int8_t WiFiESPDrv::disconnect()
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(DISCONNECT_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    int8_t result = SpiDrv::waitResponseCmd(DISCONNECT_CMD, PARAM_NUMS_1, &_data, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return result;
+	// Close connection with AT+CIPCLOSE
 }
 
-uint8_t WiFiDrv::getConnectionStatus()
+uint8_t WiFiESPDrv::getConnectionStatus()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_CONN_STATUS_CMD, PARAM_NUMS_0);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = -1;
-    uint8_t _dataLen = 0;
-    SpiDrv::waitResponseCmd(GET_CONN_STATUS_CMD, PARAM_NUMS_1, &_data, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return _data;
+	// get connection status with AT+CIPSTATUS
 }
 
-uint8_t* WiFiDrv::getMacAddress()
+uint8_t* WiFiESPDrv::getMacAddress()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_MACADDR_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    SpiDrv::waitResponseCmd(GET_MACADDR_CMD, PARAM_NUMS_1, _mac, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return _mac;
+	// get local MAC address with AT+CIPSTAMAC?
 }
 
-void WiFiDrv::getIpAddress(IPAddress& ip)
+void WiFiESPDrv::getIpAddress(IPAddress& ip)
 {
-	getNetworkData(_localIp, _subnetMask, _gatewayIp);
-	ip = _localIp;
+	// get local IP address with AT+CIPSTA?
 }
 
- void WiFiDrv::getSubnetMask(IPAddress& mask)
+ void WiFiESPDrv::getSubnetMask(IPAddress& mask)
  {
-	getNetworkData(_localIp, _subnetMask, _gatewayIp);
-	mask = _subnetMask;
+	// No way I know of to get this, so do nothing
  }
 
- void WiFiDrv::getGatewayIP(IPAddress& ip)
+ void WiFiESPDrv::getGatewayIP(IPAddress& ip)
  {
-	getNetworkData(_localIp, _subnetMask, _gatewayIp);
-	ip = _gatewayIp;
+	// No way I know of to get this, so do nothing
  }
 
-char* WiFiDrv::getCurrentSSID()
+char* WiFiESPDrv::getCurrentSSID()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_CURR_SSID_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    SpiDrv::waitResponseCmd(GET_CURR_SSID_CMD, PARAM_NUMS_1, (uint8_t*)_ssid, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return _ssid;
+	// grab SSID with AT+CWJAP_CUR?
 }
 
-uint8_t* WiFiDrv::getCurrentBSSID()
+uint8_t* WiFiESPDrv::getCurrentBSSID()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_CURR_BSSID_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    SpiDrv::waitResponseCmd(GET_CURR_BSSID_CMD, PARAM_NUMS_1, _bssid, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return _bssid;
+	// grab BSSID with AT+CWJAP_CUR?
 }
 
-int32_t WiFiDrv::getCurrentRSSI()
+int32_t WiFiESPDrv::getCurrentRSSI()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_CURR_RSSI_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    int32_t rssi = 0;
-    SpiDrv::waitResponseCmd(GET_CURR_RSSI_CMD, PARAM_NUMS_1, (uint8_t*)&rssi, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return rssi;
+	// grab RSSI with AT+CWJAP_CUR?
 }
 
-uint8_t WiFiDrv::getCurrentEncryptionType()
+uint8_t WiFiESPDrv::getCurrentEncryptionType()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_CURR_ENCT_CMD, PARAM_NUMS_1);
-
-    uint8_t _dummy = DUMMY_DATA;
-    SpiDrv::sendParam(&_dummy, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t dataLen = 0;
-    uint8_t encType = 0;
-    SpiDrv::waitResponseCmd(GET_CURR_ENCT_CMD, PARAM_NUMS_1, (uint8_t*)&encType, &dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return encType;
+	// Not sure how to grab this, so returns 0 for now.
+	return 0;
 }
 
-int8_t WiFiDrv::startScanNetworks()
+int8_t WiFiESPDrv::startScanNetworks()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(START_SCAN_NETWORKS, PARAM_NUMS_0);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-
-    if (!SpiDrv::waitResponseCmd(START_SCAN_NETWORKS, PARAM_NUMS_1, &_data, &_dataLen))
-     {
-         WARN("error waitResponse");
-         _data = WL_FAILURE;
-     }
-
-    SpiDrv::spiSlaveDeselect();
-
-    return (_data == WL_FAILURE)? _data : WL_SUCCESS;
+	// Start network scan with AT+CWLAP
+	// Note that this causes disconnect from any current AP
 }
 
-
-uint8_t WiFiDrv::getScanNetworks()
+uint8_t WiFiESPDrv::getScanNetworks()
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(SCAN_NETWORKS, PARAM_NUMS_0);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t ssidListNum = 0;
-    SpiDrv::waitResponse(SCAN_NETWORKS, &ssidListNum, (uint8_t**)_networkSsid, WL_NETWORKS_LIST_MAXNUM);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return ssidListNum;
+	// Returns number of entries in the list from AT+CWLAP
 }
 
-char* WiFiDrv::getSSIDNetoworks(uint8_t networkItem)
+char* WiFiESPDrv::getSSIDNetoworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
@@ -445,135 +156,44 @@ char* WiFiDrv::getSSIDNetoworks(uint8_t networkItem)
 	return _networkSsid[networkItem];
 }
 
-uint8_t WiFiDrv::getEncTypeNetowrks(uint8_t networkItem)
+uint8_t WiFiESPDrv::getEncTypeNetowrks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
 
-	WAIT_FOR_SLAVE_SELECT();
+	return _networkEncr[networkItem];
 
-    // Send Command
-    SpiDrv::sendCmd(GET_IDX_ENCT_CMD, PARAM_NUMS_1);
-
-    SpiDrv::sendParam(&networkItem, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t dataLen = 0;
-    uint8_t encType = 0;
-    SpiDrv::waitResponseCmd(GET_IDX_ENCT_CMD, PARAM_NUMS_1, (uint8_t*)&encType, &dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return encType;
 }
 
-int32_t WiFiDrv::getRSSINetoworks(uint8_t networkItem)
+int32_t WiFiESPDrv::getRSSINetoworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
-	int32_t	networkRssi = 0;
-
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(GET_IDX_RSSI_CMD, PARAM_NUMS_1);
-
-    SpiDrv::sendParam(&networkItem, 1, LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t dataLen = 0;
-    SpiDrv::waitResponseCmd(GET_IDX_RSSI_CMD, PARAM_NUMS_1, (uint8_t*)&networkRssi, &dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-	return networkRssi;
+	
+	return _networkRssi[networkItem];
 }
 
-uint8_t WiFiDrv::reqHostByName(const char* aHostname)
+uint8_t WiFiESPDrv::reqHostByName(const char* aHostname)
 {
-	WAIT_FOR_SLAVE_SELECT();
-
-    // Send Command
-    SpiDrv::sendCmd(REQ_HOST_BY_NAME_CMD, PARAM_NUMS_1);
-    SpiDrv::sendParam((uint8_t*)aHostname, strlen(aHostname), LAST_PARAM);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _data = 0;
-    uint8_t _dataLen = 0;
-    uint8_t result = SpiDrv::waitResponseCmd(REQ_HOST_BY_NAME_CMD, PARAM_NUMS_1, &_data, &_dataLen);
-
-    SpiDrv::spiSlaveDeselect();
-
-    return result;
+	// deprecated because no higher level code uses it
 }
 
-int WiFiDrv::getHostByName(IPAddress& aResult)
+int WiFiESPDrv::getHostByName(IPAddress& aResult)
 {
-	uint8_t  _ipAddr[WL_IPV4_LENGTH];
-	IPAddress dummy(0xFF,0xFF,0xFF,0xFF);
-	int result = 0;
-
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(GET_HOST_BY_NAME_CMD, PARAM_NUMS_0);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(GET_HOST_BY_NAME_CMD, PARAM_NUMS_1, _ipAddr, &_dataLen))
-    {
-        WARN("error waitResponse");
-    }else{
-    	aResult = _ipAddr;
-    	result = (aResult != dummy);
-    }
-    SpiDrv::spiSlaveDeselect();
-    return result;
+	// deprecated because no higher level code uses it
 }
 
-int WiFiDrv::getHostByName(const char* aHostname, IPAddress& aResult)
+int WiFiESPDrv::getHostByName(const char* aHostname, IPAddress& aResult)
 {
-	uint8_t retry = 10;
-	if (reqHostByName(aHostname))
-	{
-		while(!getHostByName(aResult) && --retry > 0)
-		{
-			delay(1000);
-		}
-	}else{
-		return 0;
-	}
-	return (retry>0);
+	// there's no proper way to do this, so we connect to port 80 and check status for the IP
+	// this is amazingly lame and weak -- need to fork the AT command set to fix this
+	// However, since I'm also controlling the higher level things and the ESP takes a string,
+	// I should be able to just deprecate this entirely
 }
 
-char*  WiFiDrv::getFwVersion()
+char*  WiFiESPDrv::getFwVersion()
 {
-	WAIT_FOR_SLAVE_SELECT();
-    // Send Command
-    SpiDrv::sendCmd(GET_FW_VERSION_CMD, PARAM_NUMS_0);
-
-    //Wait the reply elaboration
-    SpiDrv::waitForSlaveReady();
-
-    // Wait for reply
-    uint8_t _dataLen = 0;
-    if (!SpiDrv::waitResponseCmd(GET_FW_VERSION_CMD, PARAM_NUMS_1, (uint8_t*)fwVersion, &_dataLen))
-    {
-        WARN("error waitResponse");
-    }
-    SpiDrv::spiSlaveDeselect();
-    return fwVersion;
+	// returns output of AT+GMR
 }
 
-WiFiDrv wiFiDrv;
+WiFiESPDrv wifiESPDrv;

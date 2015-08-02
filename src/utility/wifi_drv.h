@@ -22,7 +22,8 @@
 
 #include <inttypes.h>
 #include "IPAddress.h"
-#include "WiFiUdp.h"
+#include "WiFiESPUdp.h"
+#include "utility/at_drv.h"
 
 // Key index length
 #define KEY_IDX_LEN     1
@@ -43,26 +44,16 @@ private:
 	static char 	fwVersion[WL_FW_VER_LENGTH];
 
 	// settings of current selected network
+	static uint8_t 	_muxID;
 	static char 	_ssid[WL_SSID_MAX_LENGTH];
 	static uint8_t 	_bssid[WL_MAC_ADDR_LENGTH];
 	static uint8_t 	_mac[WL_MAC_ADDR_LENGTH];
 	static uint8_t  _localIp[WL_IPV4_LENGTH];
 	static uint8_t  _subnetMask[WL_IPV4_LENGTH];
 	static uint8_t  _gatewayIp[WL_IPV4_LENGTH];
-
-	/*
-	 * Get network Data information
-	 */
-    static void getNetworkData(uint8_t *ip, uint8_t *mask, uint8_t *gwip);
-
-    static uint8_t reqHostByName(const char* aHostname);
-
-    static int getHostByName(IPAddress& aResult);
-
-    /*
-     * Get remote Data information on UDP socket
-     */
-    static void getRemoteData(uint8_t sock, uint8_t *ip, uint8_t *port);
+	
+	// AT driver object for the ESP chip
+	static ATDrvClass 	_esp;
 
 public:
 
@@ -104,7 +95,7 @@ public:
      * param key_idx: The key index to set. Valid values are 0-3.
      * param key: Key input buffer.
      * param len: Lenght of key string.
-     * return: WL_SUCCESS or WL_FAILURE
+     * return: Since the ESP8266 does not support WEP, this always returns WL_FAILURE
      */
     static int8_t wifiSetKey(char* ssid, uint8_t ssid_len, uint8_t key_idx, const void *key, const uint8_t len);
 
@@ -120,13 +111,15 @@ public:
     static void config(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet);
 
     /* Set DNS ip configuration
-           *
-           * param validParams: set the number of parameters that we want to change
-           * 					 i.e. validParams = 1 means that we'll change only dns_server1
-           * 					 	  validParams = 2 means that we'll change dns_server1 and dns_server2
-           * param dns_server1: Static DNS server1 configuration
-           * param dns_server2: Static DNS server2 configuration
-           */
+     *
+     * @param validParams: set the number of parameters that we want to change
+     * 					 i.e. validParams = 1 means that we'll change only dns_server1
+     * 					 	  validParams = 2 means that we'll change dns_server1 and dns_server2
+     * @param dns_server1: Static DNS server1 configuration
+     * @param dns_server2: Static DNS server2 configuration
+	 *
+	 * @returns: Since the ESP8266 DNS servers are hard coded, this does nothing
+     */
     static void setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_server2);
 
     /*
@@ -257,10 +250,10 @@ public:
      */
     static char* getFwVersion();
 
-    friend class WiFiUDP;
+    friend class WiFiESPUDP;
 
 };
 
-extern WiFiESPDrv WiFiESPDrv;
+extern WiFiESPDrv wifiESPDrv;
 
 #endif

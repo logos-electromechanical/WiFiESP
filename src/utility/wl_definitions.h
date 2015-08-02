@@ -46,6 +46,16 @@
 #define NA_STATE -1
 //Maximum number of attempts to establish wifi connection
 #define WL_MAX_ATTEMPT_CONNECTION	10
+// Maximum AT command timeout (ms)
+#define WL_AT_TIMEOUT			250
+// Maximum connection timeout (ms)
+#define WL_CONNECT_TIMEOUT		5000
+// Maximum scan timeout (ms)
+#define WL_SCAN_TIMEOUT			15000
+// AT Command Serial Device
+#define WL_AT_DEVICE	Serial1
+// AT command data rate
+#define WL_AT_BAUD		9600
 
 typedef enum {
 	WL_NO_SHIELD = 255,

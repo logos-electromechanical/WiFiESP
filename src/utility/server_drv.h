@@ -21,6 +21,21 @@
 #define Server_ESP_Drv_h
 
 #include <inttypes.h>
+#include "utility/at_drv.h"
+
+enum wl_tcp_state {
+  CLOSED      = 0,
+  LISTEN      = 1,
+  SYN_SENT    = 2,
+  SYN_RCVD    = 3,
+  ESTABLISHED = 4,
+  FIN_WAIT_1  = 5,
+  FIN_WAIT_2  = 6,
+  CLOSE_WAIT  = 7,
+  CLOSING     = 8,
+  LAST_ACK    = 9,
+  TIME_WAIT   = 10
+};
 
 typedef enum eProtMode {TCP_MODE, UDP_MODE}tProtMode;
 
@@ -32,6 +47,7 @@ public:
     static void startServer(uint16_t port, uint8_t sock, uint8_t protMode=TCP_MODE);
 
     static void startClient(uint32_t ipAddress, uint16_t port, uint8_t sock, uint8_t protMode=TCP_MODE);
+    static void startClient(char * host, uint16_t port, uint8_t sock, uint8_t protMode=TCP_MODE);
 
     static void stopClient(uint8_t sock);
                                                                                   
