@@ -114,14 +114,21 @@ class ATDrvClass {
 	int16_t		available(uint8_t mux_id);
 	int16_t		availableTX(uint8_t mux_id);
 	char 		peekChar(uint8_t mux_id);
-	char 		getChar(uint8_t mux_id)
+	char 		getChar(uint8_t mux_id);
+	char 		getCharTX(uint8_t mux_id);
 	int16_t 	getBuf(uint8_t mux_id, uint8_t* buf, uint16_t len);
 	int16_t 	getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
+	bool		putCharRX(uint8_t mux_id, uint8_t c);
+	bool		putCharTX(uint8_t mux_id, uint8_t c);
 	int16_t		putBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
 	int16_t		putBufRX(uint8_t mux_id, uint8_t* buf, uint16_t len);
     
 	private:
     HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
+	uint16_t _rx_buffer_head[MAX_SOCK_NUM];
+	uint16_t _rx_buffer_tail[MAX_SOCK_NUM];
+	uint16_t _tx_buffer_head[MAX_SOCK_NUM];
+	uint16_t _tx_buffer_tail[MAX_SOCK_NUM];
 	uint8_t rxBufs[MAX_SOCK_NUM][ESP_RX_BUFLEN];
 	uint8_t txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
 };

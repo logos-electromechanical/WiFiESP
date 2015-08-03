@@ -62,6 +62,12 @@ ATDrvClass::ATDrvClass(HardwareSerial &uart, uint32_t baud): m_puart(&uart)
     m_puart->begin(baud);
 	m_puart->setTimeout(WL_AT_TIMEOUT);
     rx_empty();
+	for (uint8_t i; i < MAX_SOCK_NUM; i++) {
+		_rx_buffer_head[i] = 0;
+		_rx_buffer_tail[i] = 0;
+		_tx_buffer_head[i] = 0;
+		_tx_buffer_tail[i] = 0;
+	}
 }
 
 void ATDrvClass::rx_empty(void) 
@@ -826,6 +832,93 @@ bool ATDrvClass::qCIPBUFSTATUS(uint8_t mux_id) {
     ret = recvFind(F("0\r\n\r\nOK"), WL_AT_TIMEOUT);
 	IPDenable = true;
     return ret;
+}
+
+	
+int16_t	ATDrvClass::available(uint8_t mux_id) {
+	return ((unsigned int)(ESP_RX_BUFLEN + _rx_buffer_head[mux_id] - _rx_buffer_tail[mux_id])) % ESP_RX_BUFLEN;
+}
+
+int16_t	ATDrvClass::availableTX(uint8_t mux_id) {
+	return ((unsigned int)(ESP_TX_BUFLEN + _tx_buffer_head[mux_id] - _tx_buffer_tail[mux_id])) % ESP_TX_BUFLEN;
+}
+
+char ATDrvClass::peekChar(uint8_t mux_id) {
+  if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) {
+    return -1;
+  } else {
+    return _rx_buffer[mux_id][_rx_buffer_tail[mux_id]];
+  }
+}
+
+char ATDrvClass::getChar(uint8_t mux_id) {
+  if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) {
+    return -1;
+  } else {
+    unsigned char c = _rx_buffer[mux_id][_rx_buffer_tail[mux_id]];
+    _rx_buffer_tail[mux_id] = (_rx_buffer_tail[mux_id] + 1) % ESP_RX_BUFLEN;
+    return c;
+  }
+}
+
+char ATDrvClass::getCharTX(uint8_t mux_id) {
+  if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) {
+    return -1;
+  } else {
+    unsigned char c = _tx_buffer[mux_id][_tx_buffer_tail[mux_id]];
+    _tx_buffer_tail[mux_id] = (_tx_buffer_tail[mux_id] + 1) % ESP_TX_BUFLEN;
+    return c;
+  }
+}
+
+int16_t ATDrvClass::getBuf(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+	int16_t count = 0;
+	if (available(mux_id)) {
+		while (available(mux_id) && (count < len)) {
+			buf[count] = getChar(mux_id);
+			count++;
+		}
+		return count;
+	} else return -1;
+}
+
+int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+	int16_t count = 0;
+	if (available(mux_id)) {
+		while (available(mux_id) && (count < len)) {
+			buf[count] = getCharTX(mux_id);
+			count++;
+		}
+		return count;
+	} else return -1;
+}
+
+bool ATDrvClass::putCharRX(uint8_t mux_id, uint8_t c) {
+	if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	uint16_t i = (_rx_buffer_head[mux_id] + 1) % ESP_RX_BUFLEN;
+	_rx_buffer[mux_id][_rx_buffer_head] = c;
+	_rx_buffer_head[mux_id] = i;
+	return true;
+}
+
+bool ATDrvClass::putCharTX(uint8_t mux_id, uint8_t c){
+	if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	uint16_t i = (_tx_buffer_head[mux_id] + 1) % ESP_TX_BUFLEN;
+	_tx_buffer[mux_id][_tx_buffer_head] = c;
+	_tx_buffer_head[mux_id] = i;
+	return true;
+}
+
+int16_t	ATDrvClass::putBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+	int16_t count = 0;
+	while ((putCharTX(mux_id, buf[count])) && (count < len)) count++;
+	return count;
+}
+
+int16_t	ATDrvClass::putBufRX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+	int16_t count = 0;
+	while ((putCharRX(mux_id, buf[count])) && (count < len)) count++;
+	return count;
 }
 
 
