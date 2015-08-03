@@ -52,8 +52,22 @@ bool IPDenable = true;
 
 // Grab the serial stream when it comes in, assuming we are not waiting on other things
 void serialEvent1(void) {
+	uint16_t count = 0;
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
+		if(Serial1.find(F("+IPD,"))) {
+			uint8_t mux = Serial1.parseInt();	// figure out which mux
+			Serial1.find(F(","));
+			uint16_t len = Serial1.parseInt();	// figure out how much data is inbound
+			while(Serial1.available() && (count < len)) {
+				if (!putCharRX(mux, Serial1.read())) {
+					while (Serial1.available()) Serial1.read();
+					WARN("More incoming serial data than room in the buffer -- dumping & exiting");
+					break;
+				} else count++;
+			}
+		}
+		while (Serial1.available()) Serial1.read();
 	}
 }
 
