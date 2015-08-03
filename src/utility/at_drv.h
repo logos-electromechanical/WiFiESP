@@ -35,10 +35,6 @@
 #define ESP_AT_DEF		2
 #define ESP_AT_DEP		3
 
-// This flag tells the event handler whether incoming data should be treated
-// as coming on one of the muxes (true) or whether it's a response to something.
-bool IPDenable = true;
-
 class ATDrvClass {
 	public:
 	
@@ -87,6 +83,7 @@ class ATDrvClass {
     uint32_t recvPkg(uint8_t *buffer, uint32_t buffer_size, uint32_t *data_len, uint32_t timeout, uint8_t *coming_mux_id);
 	
     bool eAT(void);
+	bool sATCIPDINFO(uint8_t mode);
     bool eATRST(uint32_t timeout);
     bool eATGMR(String &version);
     bool qATCWMODE(uint8_t *mode, uint8_t pattern=3);
@@ -102,6 +99,7 @@ class ATDrvClass {
 	bool sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet, uint8_t pattern);
     bool eATCIPSTATUS(String &list);
     bool sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port);
+	bool sATCIPSTARTMultiple(uint8_t mux_id, String type, IPAddress addr, uint32_t port);
     bool sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t len);
     bool sATCIPSENDMultipleFromFlash(uint8_t mux_id, const uint8_t *buffer, uint32_t len);
     bool sATCIPCLOSEMulitple(uint8_t mux_id);
@@ -111,8 +109,20 @@ class ATDrvClass {
     bool sATCIPMODE(uint8_t mode);
     bool eATPING(String ip);
     bool sATCIPSTO(uint32_t timeout);
+	bool qCIPBUFSTATUS(uint8_t mux_id);
+	
+	int16_t		available(uint8_t mux_id);
+	int16_t		availableTX(uint8_t mux_id);
+	char 		peekChar(uint8_t mux_id);
+	char 		getChar(uint8_t mux_id)
+	int16_t 	getBuf(uint8_t mux_id, uint8_t* buf, uint16_t len);
+	int16_t 	getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
+	int16_t		putBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
+	int16_t		putBufRX(uint8_t mux_id, uint8_t* buf, uint16_t len);
     
 	private:
     HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
+	uint8_t rxBufs[MAX_SOCK_NUM][ESP_RX_BUFLEN];
+	uint8_t txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
 };
 #endif

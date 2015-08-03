@@ -46,7 +46,11 @@
         }\
     } while(0)
 		
-// Grab the serial stream when it comes in
+// This flag tells the event handler whether incoming data should be treated
+// as coming on one of the muxes (true) or whether it's a response to something.
+bool IPDenable = true;
+
+// Grab the serial stream when it comes in, assuming we are not waiting on other things
 void serialEvent1(void) {
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
@@ -237,6 +241,17 @@ bool ATDrvClass::eAT(void)
 	IPDenable = false;
     rx_empty();
     m_puart->println(F("AT"));
+    ret = recvFind("OK", WL_AT_TIMEOUT);
+	IPDenable = true;
+	return ret;
+}
+
+bool ATDrvClass::sATCIPDINFO(uint8_t mode) {
+	bool ret = false;
+	IPDenable = false;
+    rx_empty();
+    m_puart->print(F("AT+CIPDINFO="));
+	m_puart->println(mode);
     ret = recvFind("OK", WL_AT_TIMEOUT);
 	IPDenable = true;
 	return ret;
@@ -598,8 +613,29 @@ bool ATDrvClass::eATCIPSTATUS(String &list)
     return ret;
 }
 
-bool ATDrvClass::sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port)
-{
+bool ATDrvClass::sATCIPSTARTMultiple(uint8_t mux_id, String type, String addr, uint32_t port) {
+    String data;
+	IPDenable = false;
+    rx_empty();
+    m_puart->print(F("AT+CIPSTART="));
+    m_puart->print(mux_id);
+    m_puart->print(F(",\""));
+    m_puart->print(type);
+    m_puart->print(F("\",\""));
+    m_puart->print(addr);
+    m_puart->print(F("\","));
+    m_puart->println(port);
+    
+    data = recvString("OK", "ERROR", "ALREADY CONNECT", WL_CONNECT_TIMEOUT);
+    if (data.indexOf("OK") != -1 || data.indexOf("ALREADY CONNECT") != -1) {
+		IPDenable = true;
+        return true;
+    }
+    return false;
+	IPDenable = true;
+}
+
+bool ATDrvClass::sATCIPSTARTMultiple(uint8_t mux_id, String type, IPAddress addr, uint32_t port)  {
     String data;
 	IPDenable = false;
     rx_empty();
@@ -713,7 +749,9 @@ bool ATDrvClass::sATCIPSERVER(uint8_t mode, uint32_t port)
 	IPDenable = false;
     if (mode) {
         rx_empty();
-        m_puart->print(F("AT+CIPSERVER=1,"));
+        m_puart->print(F("AT+CIPSERVER="));
+		m_puart->print(mode);
+		m_puart->print(F(","));
         m_puart->println(port);
         
         data = recvString("OK", "no change", WL_AT_TIMEOUT);
@@ -774,7 +812,18 @@ bool ATDrvClass::sATCIPSTO(uint32_t timeout)
     rx_empty();
     m_puart->print(F("AT+CIPSTO="));
     m_puart->println(timeout);
-    ret = recvFind("OK");
+    ret = recvFind(F("OK"), WL_CONNECT_TIMEOUT);
+	IPDenable = true;
+    return ret;
+}
+
+bool ATDrvClass::qCIPBUFSTATUS(uint8_t mux_id) {
+	bool ret = false;
+	IPDenable = false;
+    rx_empty();
+    m_puart->print(F("AT+CIPBUFSTATUS="));
+	m_puart->println(mux_id);
+    ret = recvFind(F("0\r\n\r\nOK"), WL_AT_TIMEOUT);
 	IPDenable = true;
     return ret;
 }

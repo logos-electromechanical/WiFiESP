@@ -52,11 +52,13 @@ private:
 	static uint8_t  _subnetMask[WL_IPV4_LENGTH];
 	static uint8_t  _gatewayIp[WL_IPV4_LENGTH];
 	
-	// AT driver object for the ESP chip
-	static ATDrvClass 	_esp;
+	
 
 public:
 
+	// AT driver object for the ESP chip
+	static ATDrvClass 	_esp;
+	
     /*
      * Driver initialization
      */

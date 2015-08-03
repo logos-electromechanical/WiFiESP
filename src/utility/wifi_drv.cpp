@@ -71,7 +71,8 @@ void WiFiESPDrv::wifiDriverInit()
 	if(!sATCIPMUX(WL_MUX_MULT)) {
 		WARN("Unable to set mux to multiple");
 	}
-	sATCIPSTO(WL_AT_TIMEOUT);
+	sATCIPSTO(WL_CONNECT_TIMEOUT);	// Set TCP timeout
+	//sATCIPDINFO(1);					// Turn on IPD info
 	eATGMR(&fwVersion);		// grab the firmware version so we don't have to do it again
 }
 

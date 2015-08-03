@@ -32,26 +32,54 @@ extern "C" {
 // Start server TCP on port specified
 void ServerESPDrv::startServer(uint16_t port, uint8_t sock, uint8_t protMode)
 {
-	// Start new server on port, using sock, using AT+CIPSERVER for TCP
-	// Uses AT+CIPSTART for UDP
+	// Start new server on port using AT+CIPSERVER for TCP
+	// Uses AT+CIPSTART and sock for UDP
 	// protMode is either TCP_MODE or UDP_MODE
+	switch (protMode) {
+		case TCP_MODE:
+			wifiESPDrv._esp.sATCIPSERVER(1, port);
+			break;
+		case UDP_MODE:
+			wifiESPDrv._esp.sATCIPSTARTMultiple(sock, "UDP", "", port);
+			break
+		default:
+			WARN("Invalid mode selection for startServer");
+			break;
+	};
 }
 
 // Start client TCP on port/IP specified
 void ServerESPDrv::startClient(uint32_t ipAddress, uint16_t port, uint8_t sock, uint8_t protMode)
 {
-	// Calls the version of this that uses a host string
+	// Open a client using AT+CIPSTART
+	String type;
+	IPAddress host = ipAddress;
+	if (protMode == TCP_MODE) {
+		type = "\"TCP\"";
+	} else if (protMode == UDP_MODE) {
+		type = "\"UDP\"";
+	} else
+	wifiESPDrv._esp.sATCIPSTARTMultiple(sock, type, host, port);
 }
 
 void ServerESPDrv::startClient(char * host, uint16_t port, uint8_t sock, uint8_t protMode)
 {
 	// Open a client using AT+CIPSTART
+	String type;
+	String _host = host;
+	if (protMode == TCP_MODE) {
+		type = "\"TCP\"";
+	} else if (protMode == UDP_MODE) {
+		type = "\"UDP\"";
+	} else
+	wifiESPDrv._esp.sATCIPSTARTMultiple(sock, type, _host, port);
 }
 
 // Stop server TCP on socket specified
 void ServerESPDrv::stopClient(uint8_t sock)
 {
 	// Kill it with AT+CIPCLOSE. Works for UDP, TCP, and servers
+	wifiESPDrv._esp.sATCIPCLOSEMulitple(sock);
 }
 
 
@@ -59,48 +87,105 @@ uint8_t ServerESPDrv::getServerState(uint8_t sock)
 {
 	// Grab the status of mux ID sock with AT+CIPSTATUS
 	// Translate into the language of wl_tcp_state enum
+	String list;
+	String mode;
+	String host;
+	uint8_t dir;
+	if (wifiESPDrv._esp.eATCIPSTATUS(&list)) {
+		while(list.indexOf('+') != -1) {									// Is there another return line to check?
+			list = list.subString(list.indexOf('+'));						// Chop off all preceding lines
+			if ((uint8_t)((list.subString(list.indexOf(':') + 1)).toInt()) == sock) {	// Check if the current response line is the right one
+				mode = list.subString((list.indexOf(',') + 1), (list.indexOf(',') + 6));
+				list = list.subString(list.indexOf(',') + 1 );				// Chop after <link ID> (aka mux_id, sock, etc)
+				list = list.subString(list.indexOf(',') + 1 );				// Chop after <type>
+				host = list.subString(0, list.indexOf(','));				// grab remote IP address
+				list = list.subString(list.indexOf(',') + 1 );				// Chop after <remote IP>
+				list = list.subString(list.indexOf(',') + 1 );				// Chop after <remote port>
+				list = list.subString(list.indexOf(',') + 1 );				// Chop after <local port>
+				if (mode.equals(F("TCP"))) {
+					dir = (uint8_t)list.toInt();
+					if (dir) {
+						if (host.length() > 8) {
+							return ESTABLISHED;
+						} else return LISTEN;
+					} else {
+						if (host.length() > 8) {
+							return ESTABLISHED;
+						} else return CLOSED;
+					}
+				} else if (mode.equals(F("UDP"))) {
+					return LISTEN;
+				}
+			}
+		}
+		return CLOSED;		// If we get here, it means that there was no line for the given sock, so we assume closed
+	} else return CLOSED;	// If we didn't get a good response from AT+CIPSTATUS, tell the world it's closed. 
+	
 }
 
 uint8_t ServerESPDrv::getClientState(uint8_t sock)
 {
 	// Call getServerState (same difference)
+	return getServerState(sock);
 }
 
 uint16_t ServerESPDrv::availData(uint8_t sock)
 {
-	// return the available data a given socket
+	wifiESPDrv._esp.available(sock);
 }
 
 bool ServerESPDrv::getData(uint8_t sock, uint8_t *data, uint8_t peek)
 {
 	// grab a byte from the given socket (possibly as a peek)
+	if (wifiESPDrv._esp.available(sock)) {
+		if (peek) {
+			*data = wifiESPDrv._esp.peekChar(sock);
+		} else {
+			*data = wifiESPDrv._esp.getChar(sock);
+		}
+		return true;
+	} else return false;
 }
 
 bool ServerESPDrv::getDataBuf(uint8_t sock, uint8_t *_data, uint16_t *_dataLen)
 {
-	// Grab all of the data waiting in the buffer for a given socket
+	// Grab all of the data waiting in the buffer for a given socket up to _datalen
+	// The value of _datalen is modified with the amount of data returned. 
+	if (wifiESPDrv._esp.available(sock)) {
+		*_dataLen = wifiESPDrv._esp.getBuf(sock, _data, *_dataLen);
+		return true;
+	} else return false;
 }
 
 bool ServerESPDrv::insertDataBuf(uint8_t sock, const uint8_t *data, uint16_t _len)
 {
 	// Add transmit data to UDP write buffer
+	if (wifiESPDrv._esp.putBufTX(sock, data, _len)) return true;
+	return false;
 }
 
 bool ServerESPDrv::sendUdpData(uint8_t sock)
 {
-	// Send the UDP write buffer using AT+CIPSEND
+	uint8_t _tmp[ESP_TX_BUFLEN];
+	int16_t _len;
+	if (wifiESPDrv._esp.availableTX(sock)) {
+		_len = wifiESPDrv._esp.getBufTX(sock, _tmp, wifiESPDrv._esp.availableTX(sock));
+	} else return false;
+	if (_len > 0) {
+		return wifiESPDrv._esp.sATCIPSENDMultiple(sock, _tmp, _len);
+	} else return false;		
 }
-
 
 bool ServerESPDrv::sendData(uint8_t sock, const uint8_t *data, uint16_t len)
 {
-	// Send some data using AT+CIPSEND
+	return wifiESPDrv._esp.sATCIPSENDMultiple(sock, data, len);
 }
 
 
 uint8_t ServerESPDrv::checkDataSent(uint8_t sock)
 {
 	// Check on how we're doing sending buffered data with AT+CIPBUFSTATUS
+	return wifiESPDrv._esp.qCIPBUFSTATUS(sock);
 }
 
 ServerESPDrv serverESPDrv;
