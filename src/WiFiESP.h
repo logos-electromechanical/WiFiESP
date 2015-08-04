@@ -50,7 +50,7 @@ public:
     /*
      * Get firmware version
      */
-    static char* firmwareVersion();
+    static const char* firmwareVersion();
 
 
     /* Start Wifi connection for OPEN networks
@@ -152,7 +152,7 @@ public:
      *
      * return: ssid string
      */
-    char* SSID();
+    const char* SSID();
 
     /*
       * Return the current BSSID associated with the network.
@@ -191,7 +191,7 @@ public:
 	 *
      * return: ssid string of the specified item on the networks scanned list
      */
-    char*	SSID(uint8_t networkItem);
+    const char*	SSID(uint8_t networkItem);
 
     /*
      * Return the encryption type of the networks discovered during the scanNetworks

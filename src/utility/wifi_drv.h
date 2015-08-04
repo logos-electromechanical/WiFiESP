@@ -55,9 +55,6 @@ private:
 	
 
 public:
-
-	// AT driver object for the ESP chip
-	static ATDrvClass 	_esp;
 	
     /*
      * Driver initialization
@@ -158,7 +155,7 @@ public:
      *
      * return: ssid string
      */
-    static char* getCurrentSSID();
+    static const char* getCurrentSSID();
 
     /*
      * Return the current BSSID associated with the network.
@@ -204,7 +201,7 @@ public:
 	 *
      * return: ssid string of the specified item on the networks scanned list
      */
-    static char* getSSIDNetoworks(uint8_t networkItem);
+    static const char* getSSIDNetoworks(uint8_t networkItem);
 
     /*
      * Return the RSSI of the networks discovered during the scanNetworks
@@ -237,7 +234,7 @@ public:
      * Get the firmware version
      * result: version as string with this format a.b.c
      */
-    static char* getFwVersion();
+    static const char* getFwVersion();
 
     friend class WiFiESPUDP;
 

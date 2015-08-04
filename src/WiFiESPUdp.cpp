@@ -19,7 +19,6 @@
 
 extern "C" {
   #include "utility/debug.h"
-  #include "utility/wifi_spi.h"
 }
 #include <string.h>
 #include "utility/server_drv.h"
@@ -40,7 +39,7 @@ uint8_t WiFiESPUDP::begin(uint16_t port) {
     uint8_t sock = WiFiESPClass::getSocket();
     if (sock != NO_SOCKET_AVAIL)
     {
-        ServerDrv::startServer(port, sock, UDP_MODE);
+        ServerESPDrv::startServer(port, sock, UDP_MODE);
         WiFiESPClass::_server_port[sock] = port;
         _sock = sock;
         _port = port;
@@ -55,7 +54,7 @@ uint8_t WiFiESPUDP::begin(uint16_t port) {
 int WiFiESPUDP::available() {
 	 if (_sock != NO_SOCKET_AVAIL)
 	 {
-	      return ServerDrv::availData(_sock);
+	      return ServerESPDrv::availData(_sock);
 	 }
 	 return 0;
 }
@@ -66,7 +65,7 @@ void WiFiESPUDP::stop()
 	  if (_sock == NO_SOCKET_AVAIL)
 	    return;
 
-	  ServerDrv::stopClient(_sock);
+	  ServerESPDrv::stopClient(_sock);
 
 	  _sock = NO_SOCKET_AVAIL;
 }
@@ -89,7 +88,7 @@ int WiFiESPUDP::beginPacket(IPAddress ip, uint16_t port)
 	  _sock = WiFiESPClass::getSocket();
   if (_sock != NO_SOCKET_AVAIL)
   {
-	  ServerDrv::startClient(uint32_t(ip), port, _sock, UDP_MODE);
+	  ServerESPDrv::startClient(uint32_t(ip), port, _sock, UDP_MODE);
 	  WiFiESPClass::_state[_sock] = _sock;
 	  return 1;
   }
@@ -98,7 +97,7 @@ int WiFiESPUDP::beginPacket(IPAddress ip, uint16_t port)
 
 int WiFiESPUDP::endPacket()
 {
-	return ServerDrv::sendUdpData(_sock);
+	return ServerESPDrv::sendUdpData(_sock);
 }
 
 size_t WiFiESPUDP::write(uint8_t byte)
@@ -108,7 +107,7 @@ size_t WiFiESPUDP::write(uint8_t byte)
 
 size_t WiFiESPUDP::write(const uint8_t *buffer, size_t size)
 {
-	ServerDrv::insertDataBuf(_sock, buffer, size);
+	ServerESPDrv::insertDataBuf(_sock, buffer, size);
 	return size;
 }
 
@@ -122,7 +121,7 @@ int WiFiESPUDP::read()
   uint8_t b;
   if (available())
   {
-	  ServerDrv::getData(_sock, &b);
+	  ServerESPDrv::getData(_sock, &b);
   	  return b;
   }else{
 	  return -1;
@@ -134,7 +133,7 @@ int WiFiESPUDP::read(unsigned char* buffer, size_t len)
   if (available())
   {
 	  uint16_t size = 0;
-	  if (!ServerDrv::getDataBuf(_sock, buffer, &size))
+	  if (!ServerESPDrv::getDataBuf(_sock, buffer, &size))
 		  return -1;
 	  // TODO check if the buffer is too smal respect to buffer size
 	  return size;
@@ -149,7 +148,7 @@ int WiFiESPUDP::peek()
   if (!available())
     return -1;
 
-  ServerDrv::getData(_sock, &b, 1);
+  ServerESPDrv::getData(_sock, &b, 1);
   return b;
 }
 
@@ -164,7 +163,7 @@ IPAddress  WiFiESPUDP::remoteIP()
 	uint8_t _remoteIp[4] = {0};
 	uint8_t _remotePort[2] = {0};
 
-	WiFiESPDrv::getRemoteData(_sock, _remoteIp, _remotePort);
+	//WiFiESPDrv::getRemoteData(_sock, _remoteIp, _remotePort);
 	IPAddress ip(_remoteIp);
 	return ip;
 }
@@ -174,7 +173,7 @@ uint16_t  WiFiESPUDP::remotePort()
 	uint8_t _remoteIp[4] = {0};
 	uint8_t _remotePort[2] = {0};
 
-	WiFiESPDrv::getRemoteData(_sock, _remoteIp, _remotePort);
+	//WiFiESPDrv::getRemoteData(_sock, _remoteIp, _remotePort);
 	uint16_t port = (_remotePort[0]<<8)+_remotePort[1];
 	return port;
 }

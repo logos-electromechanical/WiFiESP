@@ -51,7 +51,7 @@ int WiFiESPClient::connect(IPAddress ip, uint16_t port) {
     _sock = getFirstSocket();
     if (_sock != NO_SOCKET_AVAIL)
     {
-    	ServerDrv::startClient(uint32_t(ip), port, _sock);
+    	ServerESPDrv::startClient(uint32_t(ip), port, _sock);
     	WiFiESPClass::_state[_sock] = _sock;
 
     	unsigned long start = millis();
@@ -88,12 +88,12 @@ size_t WiFiESPClient::write(const uint8_t *buf, size_t size) {
   }
 
 
-  if (!ServerDrv::sendData(_sock, buf, size))
+  if (!ServerESPDrv::sendData(_sock, buf, size))
   {
 	  setWriteError();
       return 0;
   }
-  if (!ServerDrv::checkDataSent(_sock))
+  if (!ServerESPDrv::checkDataSent(_sock))
   {
 	  setWriteError();
       return 0;
@@ -105,7 +105,7 @@ size_t WiFiESPClient::write(const uint8_t *buf, size_t size) {
 int WiFiESPClient::available() {
   if (_sock != 255)
   {
-      return ServerDrv::availData(_sock);
+      return ServerESPDrv::availData(_sock);
   }
    
   return 0;
@@ -116,7 +116,7 @@ int WiFiESPClient::read() {
   if (!available())
     return -1;
 
-  ServerDrv::getData(_sock, &b);
+  ServerESPDrv::getData(_sock, &b);
   return b;
 }
 
@@ -125,7 +125,7 @@ int WiFiESPClient::read(uint8_t* buf, size_t size) {
   // sizeof(size_t) is architecture dependent
   // but we need a 16 bit data type here
   uint16_t _size = size;
-  if (!ServerDrv::getDataBuf(_sock, buf, &_size))
+  if (!ServerESPDrv::getDataBuf(_sock, buf, &_size))
       return -1;
   return 0;
 }
@@ -135,7 +135,7 @@ int WiFiESPClient::peek() {
 	  if (!available())
 	    return -1;
 
-	  ServerDrv::getData(_sock, &b, 1);
+	  ServerESPDrv::getData(_sock, &b, 1);
 	  return b;
 }
 
@@ -149,7 +149,7 @@ void WiFiESPClient::stop() {
   if (_sock == 255)
     return;
 
-  ServerDrv::stopClient(_sock);
+  ServerESPDrv::stopClient(_sock);
   WiFiESPClass::_state[_sock] = NA_STATE;
 
   int count = 0;
@@ -178,7 +178,7 @@ uint8_t WiFiESPClient::status() {
     if (_sock == 255) {
     return CLOSED;
   } else {
-    return ServerDrv::getClientState(_sock);
+    return ServerESPDrv::getClientState(_sock);
   }
 }
 

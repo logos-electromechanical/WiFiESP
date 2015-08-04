@@ -25,6 +25,8 @@
 #define __AT_DRV_H__
 
 #include "Arduino.h"
+#include "utility/wl_definitions.h"
+#include <IPAddress.h>
 
 // Size memory buffers for each channel
 #define ESP_RX_BUFLEN 	1024
@@ -38,7 +40,7 @@
 class ATDrvClass {
 	public:
 	
-	ATDrvClass(HardwareSerial &uart, uint32_t baud = 9600);
+	void init(uint32_t baud = 9600);
 	
 	/* 
      * Empty the buffer or UART RX.
@@ -120,16 +122,21 @@ class ATDrvClass {
 	int16_t 	getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
 	bool		putCharRX(uint8_t mux_id, uint8_t c);
 	bool		putCharTX(uint8_t mux_id, uint8_t c);
-	int16_t		putBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len);
-	int16_t		putBufRX(uint8_t mux_id, uint8_t* buf, uint16_t len);
+	int16_t		putBufTX(uint8_t mux_id, const uint8_t* buf, uint16_t len);
+	int16_t		putBufRX(uint8_t mux_id, const uint8_t* buf, uint16_t len);
+	
+	void printIP(IPAddress ip);
     
 	private:
-    HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
-	uint16_t _rx_buffer_head[MAX_SOCK_NUM];
-	uint16_t _rx_buffer_tail[MAX_SOCK_NUM];
-	uint16_t _tx_buffer_head[MAX_SOCK_NUM];
-	uint16_t _tx_buffer_tail[MAX_SOCK_NUM];
-	uint8_t rxBufs[MAX_SOCK_NUM][ESP_RX_BUFLEN];
-	uint8_t txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
+    static HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
+	static uint16_t _rx_buffer_head[MAX_SOCK_NUM];
+	static uint16_t _rx_buffer_tail[MAX_SOCK_NUM];
+	static uint16_t _tx_buffer_head[MAX_SOCK_NUM];
+	static uint16_t _tx_buffer_tail[MAX_SOCK_NUM];
+	static uint8_t rxBufs[MAX_SOCK_NUM][ESP_RX_BUFLEN];
+	static uint8_t txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
 };
+
+extern ATDrvClass atDrv;
+
 #endif

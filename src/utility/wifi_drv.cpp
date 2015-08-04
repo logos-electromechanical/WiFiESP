@@ -49,11 +49,6 @@ uint8_t WiFiESPDrv::_gatewayIp[] = {0};
 // Firmware version
 String	WiFiESPDrv::fwVersion = String("");
 
-// last connection status 
-
-// AT driver
-ATDrvClass WiFiESPDrv::_esp = ATDrvClass(&WL_AT_DEVICE, WL_AT_BAUD);
-
 // Public Methods
 
 void WiFiESPDrv::wifiDriverInit()
@@ -61,19 +56,19 @@ void WiFiESPDrv::wifiDriverInit()
 	// Check that the ESP chip is active & reboot if not
 	// Put ESP into station mode & activate DHCP
 	// Turn on the mux for multiple connections
-	while(!eAT()) {
+	while(!atDrv.eAT()) {
 		WARN("Unable to connect to ESP8266, attempting to restart");
-		eATRST(WL_CONNECT_TIMEOUT);
+		atDrv.eATRST(WL_CONNECT_TIMEOUT);
 	}
-	if(!sATCWDHCP(WL_MODE_STA, WL_DHCP_ENB, ESP_AT_CUR)) {
+	if(!atDrv.sATCWDHCP(WL_MODE_STA, WL_DHCP_ENB, ESP_AT_CUR)) {
 		WARN("Unable to set DHCP & mode");
 	}
-	if(!sATCIPMUX(WL_MUX_MULT)) {
+	if(!atDrv.sATCIPMUX(WL_MUX_MULT)) {
 		WARN("Unable to set mux to multiple");
 	}
-	sATCIPSTO(WL_CONNECT_TIMEOUT);	// Set TCP timeout
+	atDrv.sATCIPSTO(WL_CONNECT_TIMEOUT);	// Set TCP timeout
 	//sATCIPDINFO(1);					// Turn on IPD info
-	eATGMR(&fwVersion);		// grab the firmware version so we don't have to do it again
+	atDrv.eATGMR(fwVersion);		// grab the firmware version so we don't have to do it again
 }
 
 int8_t WiFiESPDrv::wifiSetNetwork(char* ssid, uint8_t ssid_len)
@@ -87,7 +82,7 @@ int8_t WiFiESPDrv::wifiSetPassphrase(char* ssid, uint8_t ssid_len, const char *p
 	if (ssid_len > WL_SSID_MAX_LENGTH) ssid_len = WL_SSID_MAX_LENGTH;
 	_ssid = String((const char *)ssid);
 	String local_pwd = String(passphrase);
-	if (_esp.sATCWJAP(_ssid, local_pwd, ESP_AT_CUR)) {
+	if (atDrv.sATCWJAP(_ssid, local_pwd, ESP_AT_CUR)) {
 		return WL_SUCCESS;
 	} else {
 		return WL_FAILURE;
@@ -97,7 +92,7 @@ int8_t WiFiESPDrv::wifiSetPassphrase(char* ssid, uint8_t ssid_len, const char *p
 void WiFiESPDrv::config(uint8_t validParams, uint32_t local_ip, uint32_t gateway, uint32_t subnet)
 {
 	// use AT+CIPSTA_CUR to set local IP, gateway, and subnet, as requested
-	_esp.sATCIPSTAIP(validParams, local_ip, gateway, subnet, ESP_AT_CUR);
+	atDrv.sATCIPSTAIP(validParams, local_ip, gateway, subnet, ESP_AT_CUR);
 }
 
 void WiFiESPDrv::setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_server2)
@@ -107,7 +102,7 @@ void WiFiESPDrv::setDNS(uint8_t validParams, uint32_t dns_server1, uint32_t dns_
 
 int8_t WiFiESPDrv::disconnect()
 {
-	return (uint8_t)_esp.eATCWQAP();
+	return (uint8_t)atDrv.eATCWQAP();
 }
 
 uint8_t WiFiESPDrv::getConnectionStatus()
@@ -115,7 +110,7 @@ uint8_t WiFiESPDrv::getConnectionStatus()
 	// returns the results of AT+CWJAP_CUR?
 	String cSSID;
 	bool ret;
-	ret = _esp.qATCWJAP(&cSSID, ESP_AT_CUR);
+	ret = atDrv.qATCWJAP(cSSID, ESP_AT_CUR);
 	if (ret && (cSSID.indexOf(':') != -1)) {
 		// The + 2 is so we skip the colon and the leading quotation marks
 		if ((cSSID.substring(cSSID.indexOf(':') + 2)).startsWith(_ssid)) {
@@ -135,12 +130,12 @@ uint8_t* WiFiESPDrv::getMacAddress()
 	String cMAC, procS;
 	uint8_t i;
 	bool ret;
-	ret = _esp.qATCIPSTAMAC(&cMAC, ESP_AT_CUR);
+	ret = atDrv.qATCIPSTAMAC(cMAC, ESP_AT_CUR);
 	if (ret && (cMAC.indexOf(':') != -1)) {
-		procS = cMAC.subString(cMAC.indexOf('"') + 1);	// grab the start of the MAC address
+		procS = cMAC.substring(cMAC.indexOf('"') + 1);	// grab the start of the MAC address
 		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
-			_mac[i] = (uint8_t)strtol(&procS, NULL, 16);
-			procS = procS.subString(procS.indexOf(':') + 1);
+			_mac[i] = (uint8_t)strtol(procS.c_str(), NULL, 16);
+			procS = procS.substring(procS.indexOf(':') + 1);
 		}
 	}
 	return _mac;
@@ -152,15 +147,15 @@ void WiFiESPDrv::getIpAddress(IPAddress& ip)
 	String cIP, procS;
 	uint8_t i;
 	bool ret;
-	ret = _esp.qATCIPSTA(&cIP, ESP_AT_CUR);
+	ret = atDrv.qATCIPSTAIP(cIP, ESP_AT_CUR);
 	if (ret && (cIP.indexOf(':') != -1)) {
-		procS = cIP.subString(cIP.indexOf('"') + 1);	// grab the start of the IP address
+		procS = cIP.substring(cIP.indexOf('"') + 1);	// grab the start of the IP address
 		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
-			_localIP[i] = (uint8_t)procS.toInt();
-			procS = procS.subString(procS.indexOf('.') + 1);
+			_localIp[i] = (uint8_t)procS.toInt();
+			procS = procS.substring(procS.indexOf('.') + 1);
 		}
 	}
-	ip = _localIP;
+	ip = _localIp;
 }
 
  void WiFiESPDrv::getSubnetMask(IPAddress& mask)
@@ -173,21 +168,19 @@ void WiFiESPDrv::getIpAddress(IPAddress& ip)
 	// No way I know of to get this, so do nothing
  }
 
-char* WiFiESPDrv::getCurrentSSID()
+const char* WiFiESPDrv::getCurrentSSID()
 {
 	// grab SSID with AT+CWJAP_CUR?
 	String cSSID;
 	bool ret;
-	ret = _esp.qATCWJAP(&cSSID, ESP_AT_CUR);
+	ret = atDrv.qATCWJAP(cSSID, ESP_AT_CUR);
 	if (ret && (cSSID.indexOf(':') != -1)) {
-		_ssid = cSSID.subString(cSSID.indexOf(':'), cSSID.indexOf(','));
+		_ssid = cSSID.substring(cSSID.indexOf(':'), cSSID.indexOf(','));
 		// trim off the leading and trailing quotation marks
 		_ssid.remove(_ssid.indexOf('"'), 1);
 		_ssid.remove(_ssid.indexOf('"'), 1);
-		return &_ssid;
-	} else {
-		return &_ssid;
-	}
+	} 
+	return _ssid.c_str();
 }
 
 uint8_t* WiFiESPDrv::getCurrentBSSID()
@@ -196,15 +189,15 @@ uint8_t* WiFiESPDrv::getCurrentBSSID()
 	String retS, procS, byteS;
 	uint8_t i;
 	bool ret;
-	ret = _esp.qATCWJAP(&retS, ESP_AT_CUR);
+	ret = atDrv.qATCWJAP(retS, ESP_AT_CUR);
 	if (ret && (retS.indexOf(':') != -1)) {
-		procS = retS.subString(retS.indexOf(',') + 1);
+		procS = retS.substring(retS.indexOf(',') + 1);
 		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
-			_bssid[i] = (uint8_t)strtol(&procS, NULL, 16);
-			procS = procS.subString(procS.indexOf(':') + 1);
+			_bssid[i] = (uint8_t)strtol(procS.c_str(), NULL, 16);
+			procS = procS.substring(procS.indexOf(':') + 1);
 		}
 	} 
-	return &_bssid;
+	return _bssid;
 }
 
 int32_t WiFiESPDrv::getCurrentRSSI()
@@ -212,11 +205,11 @@ int32_t WiFiESPDrv::getCurrentRSSI()
 	// grab RSSI with AT+CWJAP_CUR?
 	String retS;
 	bool ret;
-	ret = _esp.qATCWJAP(&retS, ESP_AT_CUR);
+	ret = atDrv.qATCWJAP(retS, ESP_AT_CUR);
 	if (ret && (retS.indexOf(':') != -1)) {
-		retS = retS.subString(retS.indexOf(',') + 1);	// skip over the SSID
-		retS = retS.subString(retS.indexOf(',') + 1);	// skip over the BSSID
-		retS = retS.subString(retS.indexOf(',') + 1);	// skip over the channel
+		retS = retS.substring(retS.indexOf(',') + 1);	// skip over the SSID
+		retS = retS.substring(retS.indexOf(',') + 1);	// skip over the BSSID
+		retS = retS.substring(retS.indexOf(',') + 1);	// skip over the channel
 		return (int32_t)retS.toInt();
 	} else {
 		return WL_FAILURE;
@@ -235,16 +228,16 @@ int8_t WiFiESPDrv::startScanNetworks()
 	// Note that this causes disconnect from any current AP
 	String list;
 	uint8_t count;
-	if (_esp.eATCWLAP(&list) && (count < WL_NETWORKS_LIST_MAXNUM)) {
+	if (atDrv.eATCWLAP(list) && (count < WL_NETWORKS_LIST_MAXNUM)) {
 		while ((list.indexOf('+') != -1) && (count < WL_NETWORKS_LIST_MAXNUM)) {
-			list = list.subString(list.indexOf('+'));
-			if (list.startsWith(F("+CWLAP:")) {
-				list = list.subString(list.indexOf(':') + 1);	// go to the start of the encryption field
-				_networkEncr[i] = (uint8_t)list.toInt();
-				list = list.subString(list.indexOf(',') + 2);	// go to the start of the SSID field and chop off the leading quotation mark 
-				_networkSsid[i] = list.subString(0, list.indexOf('"'));	// grab the SSID field
-				list = list.subString(list.indexOf(',') + 1);	// go to the start of the RSSI field
-				_networkRssi[i] = (int32_t)list.toInt();
+			list = list.substring(list.indexOf('+'));
+			if (list.startsWith(F("+CWLAP:"))) {
+				list = list.substring(list.indexOf(':') + 1);	// go to the start of the encryption field
+				_networkEncr[count] = (uint8_t)list.toInt();
+				list = list.substring(list.indexOf(',') + 2);	// go to the start of the SSID field and chop off the leading quotation mark 
+				_networkSsid[count] = list.substring(0, list.indexOf('"'));	// grab the SSID field
+				list = list.substring(list.indexOf(',') + 1);	// go to the start of the RSSI field
+				_networkRssi[count] = (int32_t)list.toInt();
 			} else break;
 			count++;
 		}
@@ -264,12 +257,12 @@ uint8_t WiFiESPDrv::getScanNetworks()
 	return _networkCount;
 }
 
-char* WiFiESPDrv::getSSIDNetoworks(uint8_t networkItem)
+const char* WiFiESPDrv::getSSIDNetoworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
 
-	return _networkSsid[networkItem];
+	return _networkSsid[networkItem].c_str();
 }
 
 uint8_t WiFiESPDrv::getEncTypeNetowrks(uint8_t networkItem)
@@ -297,10 +290,10 @@ int WiFiESPDrv::getHostByName(const char* aHostname, IPAddress& aResult)
 	// Therefore, I'm just going to deprecate this PoS and move on.
 }
 
-char*  WiFiESPDrv::getFwVersion()
+const char*  WiFiESPDrv::getFwVersion()
 {
 	// returns output of AT+GMR
-	return &fwVersion;
+	return fwVersion.c_str();
 }
 
 WiFiESPDrv wifiESPDrv;

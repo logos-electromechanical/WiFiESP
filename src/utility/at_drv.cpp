@@ -22,8 +22,12 @@
  */
  
 #include "utility/at_drv.h"
-#include <IPAddress.h>
 #include <avr/pgmspace.h>
+
+extern "C" {
+#include "utility/wl_types.h"
+#include "utility/debug.h"
+}
 
 #define LOG_OUTPUT_DEBUG            (1)
 #define LOG_OUTPUT_DEBUG_PREFIX     (1)
@@ -55,12 +59,12 @@ void serialEvent1(void) {
 	uint16_t count = 0;
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
-		if(Serial1.find(F("+IPD,"))) {
+		if(Serial1.find("+IPD,")) {
 			uint8_t mux = Serial1.parseInt();	// figure out which mux
-			Serial1.find(F(","));
+			Serial1.find(",");
 			uint16_t len = Serial1.parseInt();	// figure out how much data is inbound
 			while(Serial1.available() && (count < len)) {
-				if (!putCharRX(mux, Serial1.read())) {
+				if (!atDrv.putCharRX(mux, Serial1.read())) {
 					while (Serial1.available()) Serial1.read();
 					WARN("More incoming serial data than room in the buffer -- dumping & exiting");
 					break;
@@ -71,7 +75,16 @@ void serialEvent1(void) {
 	}
 }
 
-ATDrvClass::ATDrvClass(HardwareSerial &uart, uint32_t baud): m_puart(&uart)
+// member initialization
+HardwareSerial* 	ATDrvClass::m_puart = &Serial1;
+uint16_t 		 	ATDrvClass::_rx_buffer_head[MAX_SOCK_NUM];
+uint16_t  			ATDrvClass::_rx_buffer_tail[MAX_SOCK_NUM];
+uint16_t  			ATDrvClass::_tx_buffer_head[MAX_SOCK_NUM];
+uint16_t  			ATDrvClass::_tx_buffer_tail[MAX_SOCK_NUM];
+uint8_t  			ATDrvClass::rxBufs[MAX_SOCK_NUM][ESP_RX_BUFLEN];
+uint8_t  			ATDrvClass::txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
+
+void ATDrvClass::init(uint32_t baud)
 {
     m_puart->begin(baud);
 	m_puart->setTimeout(WL_AT_TIMEOUT);
@@ -474,7 +487,7 @@ bool ATDrvClass::qATCWDHCP(uint8_t *mode, uint8_t *en, uint8_t pattern)
     ret = recvFindAndFilter("OK", "\r\r\n", "\r\nOK", data, WL_AT_TIMEOUT);
 	if (ret && (data.indexOf(',') != -1)) {
 		*mode = data.toInt();
-		*en = (data.substring(data.indexOf(',')).toInt();
+		*en = (data.substring(data.indexOf(','))).toInt();
 		IPDenable = true;
 		return true;
 	}
@@ -593,21 +606,21 @@ bool ATDrvClass::sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t ga
     }
 	switch (validParams) {
 		case 1:
-			_local_ip_.printTo(m_puart);
+			printIP(_local_ip_);
 			m_puart->println(F("\""));
 			break;
 		case 2:
-			_local_ip_.printTo(m_puart);
+			printIP(_local_ip_);
 			m_puart->print(F("\",\""));
-			_gateway_.printTo(m_puart);
+			printIP(_gateway_);
 			m_puart->println(F("\""));
 			break;
 		case 3:
-			_local_ip_.printTo(m_puart);
+			printIP(_local_ip_);
 			m_puart->print(F("\",\""));
-			_gateway_.printTo(m_puart);
+			printIP(_gateway_);
 			m_puart->print(F("\",\""));
-			_subnet_.printTo(m_puart);
+			printIP(_subnet_);
 			m_puart->println(F("\""));
 			break;
 		default:
@@ -615,7 +628,7 @@ bool ATDrvClass::sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t ga
 			IPDenable = true;
 			return false;
 	}
-    ret = recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", &ip, WL_AT_TIMEOUT);
+    ret = recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", ip, WL_AT_TIMEOUT);
 	IPDenable = true;
     return ret;
 }
@@ -861,7 +874,7 @@ char ATDrvClass::peekChar(uint8_t mux_id) {
   if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) {
     return -1;
   } else {
-    return _rx_buffer[mux_id][_rx_buffer_tail[mux_id]];
+    return rxBufs[mux_id][_rx_buffer_tail[mux_id]];
   }
 }
 
@@ -869,7 +882,7 @@ char ATDrvClass::getChar(uint8_t mux_id) {
   if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) {
     return -1;
   } else {
-    unsigned char c = _rx_buffer[mux_id][_rx_buffer_tail[mux_id]];
+    unsigned char c = rxBufs[mux_id][_rx_buffer_tail[mux_id]];
     _rx_buffer_tail[mux_id] = (_rx_buffer_tail[mux_id] + 1) % ESP_RX_BUFLEN;
     return c;
   }
@@ -879,7 +892,7 @@ char ATDrvClass::getCharTX(uint8_t mux_id) {
   if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) {
     return -1;
   } else {
-    unsigned char c = _tx_buffer[mux_id][_tx_buffer_tail[mux_id]];
+    unsigned char c = txBufs[mux_id][_tx_buffer_tail[mux_id]];
     _tx_buffer_tail[mux_id] = (_tx_buffer_tail[mux_id] + 1) % ESP_TX_BUFLEN;
     return c;
   }
@@ -910,7 +923,7 @@ int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 bool ATDrvClass::putCharRX(uint8_t mux_id, uint8_t c) {
 	if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_rx_buffer_head[mux_id] + 1) % ESP_RX_BUFLEN;
-	_rx_buffer[mux_id][_rx_buffer_head] = c;
+	rxBufs[mux_id][_rx_buffer_head[mux_id]] = c;
 	_rx_buffer_head[mux_id] = i;
 	return true;
 }
@@ -918,21 +931,32 @@ bool ATDrvClass::putCharRX(uint8_t mux_id, uint8_t c) {
 bool ATDrvClass::putCharTX(uint8_t mux_id, uint8_t c){
 	if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_tx_buffer_head[mux_id] + 1) % ESP_TX_BUFLEN;
-	_tx_buffer[mux_id][_tx_buffer_head] = c;
+	txBufs[mux_id][_tx_buffer_head[mux_id]] = c;
 	_tx_buffer_head[mux_id] = i;
 	return true;
 }
 
-int16_t	ATDrvClass::putBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+int16_t	ATDrvClass::putBufTX(uint8_t mux_id, const uint8_t* buf, uint16_t len) {
 	int16_t count = 0;
 	while ((putCharTX(mux_id, buf[count])) && (count < len)) count++;
 	return count;
 }
 
-int16_t	ATDrvClass::putBufRX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
+int16_t	ATDrvClass::putBufRX(uint8_t mux_id, const uint8_t* buf, uint16_t len) {
 	int16_t count = 0;
 	while ((putCharRX(mux_id, buf[count])) && (count < len)) count++;
 	return count;
 }
 
+void ATDrvClass::printIP(IPAddress ip) {
+	m_puart->print(ip[0]);
+	m_puart->print('.');
+	m_puart->print(ip[1]);
+	m_puart->print('.');
+	m_puart->print(ip[2]);
+	m_puart->print('.');
+	m_puart->print(ip[3]);
+}
+
+ATDrvClass atDrv;
 

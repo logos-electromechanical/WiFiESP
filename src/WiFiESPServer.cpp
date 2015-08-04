@@ -38,7 +38,7 @@ void WiFiESPServer::begin()
     uint8_t _sock = WiFiESPClass::getSocket();
     if (_sock != NO_SOCKET_AVAIL)
     {
-        ServerDrv::startServer(_port, _sock);
+        ServerESPDrv::startServer(_port, _sock);
         WiFiESPClass::_server_port[_sock] = _port;
         WiFiESPClass::_state[_sock] = _sock;
     }
@@ -63,7 +63,7 @@ WiFiESPClient WiFiESPServer::available(byte* status)
             //server not in listen state, restart it
             if ((_ser_status == 0)&&(cycle_server_down++ > TH_SERVER_DOWN))
             {
-            	ServerDrv::startServer(_port, sock);
+            	ServerESPDrv::startServer(_port, sock);
             	cycle_server_down = 0;
             }
 
@@ -78,7 +78,7 @@ WiFiESPClient WiFiESPServer::available(byte* status)
 }
 
 uint8_t WiFiESPServer::status() {
-    return ServerDrv::getServerState(0);
+    return ServerESPDrv::getServerState(0);
 }
 
 
