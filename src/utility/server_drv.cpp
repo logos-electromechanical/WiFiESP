@@ -79,7 +79,7 @@ void ServerESPDrv::startClient(char * host, uint16_t port, uint8_t sock, uint8_t
 void ServerESPDrv::stopClient(uint8_t sock)
 {
 	// Kill it with AT+CIPCLOSE. Works for UDP, TCP, and servers
-	atDrv.sATCIPCLOSEMulitple(sock);
+	atDrv.sATCIPCLOSEMultiple(sock);
 }
 
 

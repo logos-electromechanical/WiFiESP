@@ -228,4 +228,4 @@ int WiFiESPClass::hostByName(const char* aHostname, IPAddress& aResult)
 	return WiFiESPDrv::getHostByName(aHostname, aResult);
 }
 
-WiFiESPClass WiFi;
+WiFiESPClass WiFiESP;

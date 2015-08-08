@@ -104,7 +104,7 @@ class ATDrvClass {
 	bool sATCIPSTARTMultiple(uint8_t mux_id, String type, IPAddress addr, uint32_t port);
     bool sATCIPSENDMultiple(uint8_t mux_id, const uint8_t *buffer, uint32_t len);
     bool sATCIPSENDMultipleFromFlash(uint8_t mux_id, const uint8_t *buffer, uint32_t len);
-    bool sATCIPCLOSEMulitple(uint8_t mux_id);
+    bool sATCIPCLOSEMultiple(uint8_t mux_id);
     bool eATCIFSR(String &list);
     bool sATCIPMUX(uint8_t mode);
     bool sATCIPSERVER(uint8_t mode, uint32_t port = 333);

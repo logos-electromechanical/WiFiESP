@@ -52,10 +52,11 @@ extern "C" {
 		
 // This flag tells the event handler whether incoming data should be treated
 // as coming on one of the muxes (true) or whether it's a response to something.
-bool IPDenable = true;
+static bool IPDenable = true;
 
 // Grab the serial stream when it comes in, assuming we are not waiting on other things
 void serialEvent1(void) {
+	return;	// this is just here for testing the rest of the stuff...
 	uint16_t count = 0;
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
@@ -730,7 +731,7 @@ bool ATDrvClass::sATCIPSENDMultipleFromFlash(uint8_t mux_id, const uint8_t *buff
     return ret;
 }
 
-bool ATDrvClass::sATCIPCLOSEMulitple(uint8_t mux_id)
+bool ATDrvClass::sATCIPCLOSEMultiple(uint8_t mux_id)
 {
 	IPDenable = false;
     String data;

@@ -35,12 +35,12 @@ WiFiESPServer::WiFiESPServer(uint16_t port)
 
 void WiFiESPServer::begin()
 {
-    uint8_t _sock = WiFiESPClass::getSocket();
+    uint8_t _sock = WiFiESP.getSocket();
     if (_sock != NO_SOCKET_AVAIL)
     {
         ServerESPDrv::startServer(_port, _sock);
-        WiFiESPClass::_server_port[_sock] = _port;
-        WiFiESPClass::_state[_sock] = _sock;
+        WiFiESP._server_port[_sock] = _port;
+        WiFiESP._state[_sock] = _sock;
     }
 }
 
@@ -51,7 +51,7 @@ WiFiESPClient WiFiESPServer::available(byte* status)
 
     for (int sock = 0; sock < MAX_SOCK_NUM; sock++)
     {
-        if (WiFiESPClass::_server_port[sock] == _port)
+        if (WiFiESP._server_port[sock] == _port)
         {
         	WiFiESPClient client(sock);
             uint8_t _status = client.status();
@@ -93,11 +93,11 @@ size_t WiFiESPServer::write(const uint8_t *buffer, size_t size)
 
     for (int sock = 0; sock < MAX_SOCK_NUM; sock++)
     {
-        if (WiFiESPClass::_server_port[sock] != 0)
+        if (WiFiESP._server_port[sock] != 0)
         {
         	WiFiESPClient client(sock);
 
-            if (WiFiESPClass::_server_port[sock] == _port &&
+            if (WiFiESP._server_port[sock] == _port &&
                 client.status() == ESTABLISHED)
             {                
                 n+=client.write(buffer, size);
