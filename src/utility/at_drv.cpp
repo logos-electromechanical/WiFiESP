@@ -90,6 +90,7 @@ void ATDrvClass::init(uint32_t baud)
     m_puart->begin(baud);
 	m_puart->setTimeout(WL_AT_TIMEOUT);
     rx_empty();
+	sATCIPMUX(1);
 	for (uint8_t i; i < MAX_SOCK_NUM; i++) {
 		_rx_buffer_head[i] = 0;
 		_rx_buffer_tail[i] = 0;
@@ -488,7 +489,7 @@ bool ATDrvClass::qATCWDHCP(uint8_t *mode, uint8_t *en, uint8_t pattern)
     ret = recvFindAndFilter("OK", "\r\r\n", "\r\nOK", data, WL_AT_TIMEOUT);
 	if (ret && (data.indexOf(',') != -1)) {
 		*mode = data.toInt();
-		*en = (data.substring(data.indexOf(','))).toInt();
+		*en = (data.substring(data.indexOf(',') + 1)).toInt();
 		IPDenable = true;
 		return true;
 	}

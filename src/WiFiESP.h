@@ -35,12 +35,14 @@ class WiFiESPClass
 {
 private:
 
-    void init();
+    //void init();
 public:
     static int16_t 	_state[MAX_SOCK_NUM];
     static uint16_t _server_port[MAX_SOCK_NUM];
 
     WiFiESPClass();
+	
+	void init();
 
     /*
      * Get the first socket available

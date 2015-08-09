@@ -112,17 +112,11 @@ uint8_t WiFiESPDrv::getConnectionStatus()
 	String cSSID;
 	bool ret;
 	ret = atDrv.qATCWJAP(cSSID, ESP_AT_CUR);
-	if (ret && (cSSID.indexOf(':') != -1)) {
-		// The + 2 is so we skip the colon and the leading quotation marks
-		if ((cSSID.substring(cSSID.indexOf(':') + 2)).startsWith(_ssid)) {
-			return WL_SUCCESS;
-		} else {
-			return WL_FAILURE;
-		}
+	if (ret) {
+		return WL_SUCCESS;
 	} else {
 		return WL_FAILURE;
 	}
-	
 }
 
 uint8_t* WiFiESPDrv::getMacAddress()
@@ -258,7 +252,7 @@ uint8_t WiFiESPDrv::getScanNetworks()
 	return _networkCount;
 }
 
-const char* WiFiESPDrv::getSSIDNetoworks(uint8_t networkItem)
+const char* WiFiESPDrv::getSSIDNetworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
@@ -266,7 +260,7 @@ const char* WiFiESPDrv::getSSIDNetoworks(uint8_t networkItem)
 	return _networkSsid[networkItem].c_str();
 }
 
-uint8_t WiFiESPDrv::getEncTypeNetowrks(uint8_t networkItem)
+uint8_t WiFiESPDrv::getEncTypeNetworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;
@@ -275,7 +269,7 @@ uint8_t WiFiESPDrv::getEncTypeNetowrks(uint8_t networkItem)
 
 }
 
-int32_t WiFiESPDrv::getRSSINetoworks(uint8_t networkItem)
+int32_t WiFiESPDrv::getRSSINetworks(uint8_t networkItem)
 {
 	if (networkItem >= WL_NETWORKS_LIST_MAXNUM)
 		return NULL;

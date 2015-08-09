@@ -33,7 +33,7 @@ uint16_t 	WiFiESPClass::_server_port[MAX_SOCK_NUM] = { 0, 0, 0, 0 };
 WiFiESPClass::WiFiESPClass()
 {
 	// Driver initialization
-	init();
+	//init();
 }
 
 void WiFiESPClass::init()
@@ -205,17 +205,17 @@ int8_t WiFiESPClass::scanNetworks()
 
 const char* WiFiESPClass::SSID(uint8_t networkItem)
 {
-	return WiFiESPDrv::getSSIDNetoworks(networkItem);
+	return WiFiESPDrv::getSSIDNetworks(networkItem);
 }
 
 int32_t WiFiESPClass::RSSI(uint8_t networkItem)
 {
-	return WiFiESPDrv::getRSSINetoworks(networkItem);
+	return WiFiESPDrv::getRSSINetworks(networkItem);
 }
 
 uint8_t WiFiESPClass::encryptionType(uint8_t networkItem)
 {
-    return WiFiESPDrv::getEncTypeNetowrks(networkItem);
+    return WiFiESPDrv::getEncTypeNetworks(networkItem);
 }
 
 uint8_t WiFiESPClass::status()

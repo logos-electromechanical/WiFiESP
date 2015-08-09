@@ -50,7 +50,7 @@
 // Maximum AT command timeout (ms)
 #define WL_AT_TIMEOUT			250
 // Maximum connection timeout (ms)
-#define WL_CONNECT_TIMEOUT		5000
+#define WL_CONNECT_TIMEOUT		10000
 // Maximum scan timeout (ms)
 #define WL_SCAN_TIMEOUT			15000
 // AT Command Serial Device

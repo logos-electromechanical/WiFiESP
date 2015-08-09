@@ -7,16 +7,20 @@
 IPAddress getAddress(void) {
   uint8_t o1, o2, o3, o4;
   Serial.println(F("enter first octet"));
+  while(Serial.available()) Serial.read();
   while (!Serial.available());
   if ((Serial.peek() == '\r') || (Serial.peek() == '\n')) return IPAddress((uint32_t)0);
   o1 = Serial.parseInt();
   Serial.println(F("enter second octet"));
+  while(Serial.available()) Serial.read();
   while (!Serial.available());
   o2 = Serial.parseInt();
   Serial.println(F("enter third octet"));
+  while(Serial.available()) Serial.read();
   while (!Serial.available());
   o3 = Serial.parseInt();
   Serial.println(F("enter fourth octet"));
+  while(Serial.available()) Serial.read();
   while (!Serial.available());
   o4 = Serial.parseInt();
   return IPAddress(o1, o2, o3, o4);
@@ -25,8 +29,9 @@ IPAddress getAddress(void) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  //atDrv.init(9600);
-  Serial.println(F("Remember to set line endings to either \n or \r\n"));
+  Serial.println(F("I live!"));
+  WiFiESP.init();
+  Serial.println(F("Remember to set line endings to either \\n or \\r\\n"));
 }
 
 void loop() {
@@ -41,8 +46,9 @@ void loop() {
   uint8_t macAddressPtr[WL_MAC_ADDR_LENGTH];
 
   Serial.println(F("Enter 0 for list of commands"));
+  while(Serial.available()) Serial.read();
   while (!Serial.available()) {
-    if (Serial1.available()) Serial.print(Serial1.read());
+    if (Serial1.available()) Serial.print((char *)Serial1.read());
   }
   selection = Serial.parseInt();
   switch(selection) {
@@ -74,10 +80,12 @@ void loop() {
       break;
     case 3:
       Serial.println(F("Enter SSID to connect to"));
+      while(Serial.available()) Serial.read();
       while (!Serial.available());
       inString1 = Serial.readString();
       inString1.trim();
       Serial.println(F("Enter passphrase, or enter for none"));
+      while(Serial.available()) Serial.read();
       while (!Serial.available());
       inString2 = Serial.readString();
       inString2.trim();
@@ -140,6 +148,7 @@ void loop() {
       break;
     case 10:
       Serial.println(F("Enter the network item to get the SSID of, or press enter for the current SSID"));
+      while(Serial.available()) Serial.read();
       while (!Serial.available());
       if ((Serial.peek() == '\r') || (Serial.peek() == '\n')) {
         Serial.println(WiFiESP.SSID());
@@ -159,6 +168,7 @@ void loop() {
       break;
     case 12:
       Serial.println(F("Enter the network item to get the RSSI of, or press enter for the current RSSI"));
+      while(Serial.available()) Serial.read();
       while (!Serial.available());
       if ((Serial.peek() == '\r') || (Serial.peek() == '\n')) {
         Serial.println(WiFiESP.RSSI());
@@ -169,6 +179,7 @@ void loop() {
       break;
     case 13:
       Serial.println(F("Enter the network item to get the encryption type of, or press enter for the current type"));
+      while(Serial.available()) Serial.read();
       while (!Serial.available());
       if ((Serial.peek() == '\r') || (Serial.peek() == '\n')) {
         Serial.println(WiFiESP.encryptionType());
@@ -185,6 +196,10 @@ void loop() {
       Serial.println(F("Getting connection status..."));
       Serial.println(WiFiESP.status());
       break;
+    case 16:
+      Serial.println(F("Enter the SSID of the network to connect to"));
+      
+    case 17:
     default:
       break;
   };
