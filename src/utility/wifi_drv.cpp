@@ -333,6 +333,7 @@ bool WiFiESPDrv::getAPconfig(char* SSID, char* passwd, uint8_t *channel, uint8_t
 			*channel = (uint8_t)list.toInt();
 			list = list.substring(list.indexOf(',') + 1);
 			*encryption = (uint8_t)list.toInt();
+			return true;
 		} else return false;
 	} else return false;
 }
