@@ -48,6 +48,11 @@ void ServerESPDrv::startServer(uint16_t port, uint8_t sock, uint8_t protMode)
 	};
 }
 
+
+void ServerESPDrv::stopServer(uint16_t port) {
+	atDrv.sATCIPSERVER(0, port);
+}
+
 // Start client TCP on port/IP specified
 void ServerESPDrv::startClient(uint32_t ipAddress, uint16_t port, uint8_t sock, uint8_t protMode)
 {
@@ -87,40 +92,24 @@ uint8_t ServerESPDrv::getServerState(uint8_t sock)
 {
 	// Grab the status of mux ID sock with AT+CIPSTATUS
 	// Translate into the language of wl_tcp_state enum
-	String list;
-	String mode;
-	String host;
+	String list, mode, host;
 	uint8_t dir;
-	if (atDrv.eATCIPSTATUS(list)) {
-		while(list.indexOf('+') != -1) {									// Is there another return line to check?
-			list = list.substring(list.indexOf('+'));						// Chop off all preceding lines
-			if ((uint8_t)((list.substring(list.indexOf(':') + 1)).toInt()) == sock) {	// Check if the current response line is the right one
-				mode = list.substring((list.indexOf(',') + 1), (list.indexOf(',') + 6));
-				list = list.substring(list.indexOf(',') + 1 );				// Chop after <link ID> (aka mux_id, sock, etc)
-				list = list.substring(list.indexOf(',') + 1 );				// Chop after <type>
-				host = list.substring(0, list.indexOf(','));				// grab remote IP address
-				list = list.substring(list.indexOf(',') + 1 );				// Chop after <remote IP>
-				list = list.substring(list.indexOf(',') + 1 );				// Chop after <remote port>
-				list = list.substring(list.indexOf(',') + 1 );				// Chop after <local port>
-				if (mode.equals(F("TCP"))) {
-					dir = (uint8_t)list.toInt();
-					if (dir) {
-						if (host.length() > 8) {
-							return ESTABLISHED;
-						} else return LISTEN;
-					} else {
-						if (host.length() > 8) {
-							return ESTABLISHED;
-						} else return CLOSED;
-					}
-				} else if (mode.equals(F("UDP"))) {
-					return LISTEN;
-				}
+	if (atDrv.parseStatus(sock, NULL, mode, host, NULL, NULL, &dir)) {
+		if (mode.equals(F("TCP"))) {
+			if (dir) {
+				if (host.length() > 8) {
+					return ESTABLISHED;
+				} else return LISTEN;
+			} else {
+				if (host.length() > 8) {
+					return ESTABLISHED;
+				} else return CLOSED;
 			}
+		} else if (mode.equals(F("UDP"))) {
+			return LISTEN;
 		}
 		return CLOSED;		// If we get here, it means that there was no line for the given sock, so we assume closed
-	} else return CLOSED;	// If we didn't get a good response from AT+CIPSTATUS, tell the world it's closed. 
-	
+	} else return CLOSED;	// If we didn't get a good response from AT+CIPSTATUS, tell the world it's closed. 	
 }
 
 uint8_t ServerESPDrv::getClientState(uint8_t sock)
@@ -180,7 +169,6 @@ bool ServerESPDrv::sendData(uint8_t sock, const uint8_t *data, uint16_t len)
 {
 	return atDrv.sATCIPSENDMultiple(sock, data, len);
 }
-
 
 uint8_t ServerESPDrv::checkDataSent(uint8_t sock)
 {

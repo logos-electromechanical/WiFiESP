@@ -50,7 +50,7 @@ public:
 
 private:
   static uint16_t _srcport;
-  uint8_t _sock;   //not used
+  uint8_t _sock;  
   uint16_t  _socket;
 
   uint8_t getFirstSocket();

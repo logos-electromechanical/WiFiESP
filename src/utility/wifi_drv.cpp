@@ -291,4 +291,51 @@ const char*  WiFiESPDrv::getFwVersion()
 	return fwVersion.c_str();
 }
 
+bool WiFiESPDrv::isAccessPoint() {
+	uint8_t mode = 0;
+	atDrv.qATCWMODE(&mode, ESP_AT_CUR);
+	if (mode >= 2) return true;
+	return false;
+}
+
+bool WiFiESPDrv::setAPMode() {
+	return atDrv.sATCWMODE(2, ESP_AT_CUR);
+}
+
+bool WiFiESPDrv::setStationMode() {
+	return atDrv.sATCWMODE(1, ESP_AT_CUR);
+}
+
+bool WiFiESPDrv::setAPconfig(const char* SSID, uint8_t SSIDLen, const char* password, uint8_t passlen, uint8_t channel, uint8_t encryption) {
+	String _SSID = String(SSID);
+	String _PWD = String(password);
+	return atDrv.sATCWSAP(_SSID, _PWD, channel, encryption, ESP_AT_CUR);
+}
+
+bool WiFiESPDrv::getAPconfig(char* SSID, char* passwd, uint8_t *channel, uint8_t *encryption) {
+	String list; 
+	String _SSID, _PWD;
+	uint8_t len;
+	if (atDrv.qATCWSAP(list, ESP_AT_CUR) && (list.indexOf('+') != -1)) {
+		list = list.substring(list.indexOf('+'));
+		if (list.startsWith(String(F("+CWSAP:")))) {
+			list = list.substring(list.indexOf(':') + 1);
+			_SSID = list.substring(0, list.indexOf(','));
+			len = _SSID.length();
+			if (len > WL_SSID_MAX_LENGTH) len = WL_SSID_MAX_LENGTH;
+			memcpy(SSID, _SSID.c_str(), len);
+			list = list.substring(list.indexOf(',') + 1);
+			_PWD = list.substring(0, list.indexOf(','));
+			len = _PWD.length();
+			if (len > WL_WPA_KEY_MAX_LENGTH) len = WL_WPA_KEY_MAX_LENGTH;
+			memcpy(passwd, _PWD.c_str(), len);
+			list = list.substring(list.indexOf(',') + 1);
+			*channel = (uint8_t)list.toInt();
+			list = list.substring(list.indexOf(',') + 1);
+			*encryption = (uint8_t)list.toInt();
+		} else return false;
+	} else return false;
+}
+
+
 WiFiESPDrv wifiESPDrv;

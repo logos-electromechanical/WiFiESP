@@ -196,10 +196,6 @@ void loop() {
       Serial.println(F("Getting connection status..."));
       Serial.println(WiFiESP.status());
       break;
-    case 16:
-      Serial.println(F("Enter the SSID of the network to connect to"));
-      
-    case 17:
     default:
       break;
   };

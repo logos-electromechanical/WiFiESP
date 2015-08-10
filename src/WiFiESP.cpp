@@ -27,8 +27,8 @@ extern "C" {
 }
 
 // XXX: don't make assumptions about the value of MAX_SOCK_NUM.
-int16_t 	WiFiESPClass::_state[MAX_SOCK_NUM] = { NA_STATE, NA_STATE, NA_STATE, NA_STATE };
-uint16_t 	WiFiESPClass::_server_port[MAX_SOCK_NUM] = { 0, 0, 0, 0 };
+int16_t 	WiFiESPClass::_state[MAX_SOCK_NUM] = { NA_STATE, NA_STATE, NA_STATE, NA_STATE, NA_STATE };
+uint16_t 	WiFiESPClass::_server_port[MAX_SOCK_NUM] = { 0, 0, 0, 0, 0 };
 
 WiFiESPClass::WiFiESPClass()
 {
@@ -226,6 +226,26 @@ uint8_t WiFiESPClass::status()
 int WiFiESPClass::hostByName(const char* aHostname, IPAddress& aResult)
 {
 	return WiFiESPDrv::getHostByName(aHostname, aResult);
+}
+	
+bool WiFiESPClass::isAccessPoint() {
+	return wifiESPDrv.isAccessPoint();
+}
+
+bool WiFiESPClass::setAPMode() {
+	return wifiESPDrv.setAPMode();
+}
+
+bool WiFiESPClass::setStationMode() {
+	return wifiESPDrv.setStationMode();
+}
+
+bool WiFiESPClass::setAPconfig(const char* SSID, uint8_t SSIDLen, const char* password, uint8_t passlen, uint8_t channel, uint8_t encryption) {
+	return wifiESPDrv.setAPconfig(SSID, SSIDLen, password, passlen, channel, encryption);
+}
+
+bool WiFiESPClass::getAPconfig(char* SSID, char* password, uint8_t *channel, uint8_t *encryption) {
+	return wifiESPDrv.getAPconfig(SSID, password, channel, encryption);
 }
 
 WiFiESPClass WiFiESP;

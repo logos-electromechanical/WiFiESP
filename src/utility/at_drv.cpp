@@ -22,6 +22,7 @@
  */
  
 #include "utility/at_drv.h"
+#include "WiFiESP.h"
 #include <avr/pgmspace.h>
 
 extern "C" {
@@ -56,12 +57,13 @@ static bool IPDenable = true;
 
 // Grab the serial stream when it comes in, assuming we are not waiting on other things
 void serialEvent1(void) {
-	return;	// this is just here for testing the rest of the stuff...
-	uint16_t count = 0;
+	uint16_t remoteport, count = 0;
+	uint8_t mux, mode; 
+	String null1, null2;
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
 		if(Serial1.find("+IPD,")) {
-			uint8_t mux = Serial1.parseInt();	// figure out which mux
+			mux = Serial1.parseInt();	// figure out which mux
 			Serial1.find(",");
 			uint16_t len = Serial1.parseInt();	// figure out how much data is inbound
 			while(Serial1.available() && (count < len)) {
@@ -73,6 +75,13 @@ void serialEvent1(void) {
 			}
 		}
 		while (Serial1.available()) Serial1.read();
+		String statusStr;
+		if (WiFiESP._state[mux] == NA_STATE) {
+			WiFiESP._state[mux] = mux;
+			if (atDrv.parseStatus(mux, NULL, null1, null2, &remoteport, NULL, &mode)) {
+				WiFiESP._server_port[mux] = remoteport;
+			}
+		}
 	}
 }
 
@@ -863,6 +872,33 @@ bool ATDrvClass::qCIPBUFSTATUS(uint8_t mux_id) {
     return ret;
 }
 
+bool ATDrvClass::parseStatus(uint8_t mux, uint8_t *linkStat, String &type, String &remoteIP, uint16_t *remotePort, uint16_t *localPort, uint8_t *linkType) {
+	String list;
+	if (atDrv.eATCIPSTATUS(list)) {
+		if (list.indexOf('+') != -1) {
+			list = list.substring(list.indexOf('+') + 1);
+			if (linkStat) *linkStat = (uint8_t)list.toInt();
+			while(list.indexOf('+') != -1) {									// Is there another return line to check?
+				list = list.substring(list.indexOf('+'));
+				if ((uint8_t)((list.substring(list.indexOf(':') + 1)).toInt()) == mux) {		// is this the one we want?
+					list = list.substring(list.indexOf(',') + 1 );								// chop after <link ID> (aka mux_id, sock, etc)
+					if (type) type = list.substring(0, (list.indexOf(',')));					// extract the type
+					list = list.substring(list.indexOf(',') + 1 );								// chop after <type>
+					if (remoteIP) remoteIP = list.substring(0, (list.indexOf(',')));			// extract remote IP
+					list = list.substring(list.indexOf(',') + 1 );								// chop after <remote IP>
+					if (remotePort) *remotePort = (uint16_t)list.toInt();						// extract remote port
+					list = list.substring(list.indexOf(',') + 1 );								// chop after <remote port>
+					if (localPort) *localPort = (uint16_t)list.toInt();							// extract local port
+					list = list.substring(list.indexOf(',') + 1 );								// chop after <local port>
+					if (linkType) *linkType = (uint8_t)list.toInt();							// extract link type
+					return true;
+				}
+			}
+		} 
+	} 
+	return false;
+}
+
 	
 int16_t	ATDrvClass::available(uint8_t mux_id) {
 	return ((unsigned int)(ESP_RX_BUFLEN + _rx_buffer_head[mux_id] - _rx_buffer_tail[mux_id])) % ESP_RX_BUFLEN;
@@ -958,6 +994,62 @@ void ATDrvClass::printIP(IPAddress ip) {
 	m_puart->print(ip[2]);
 	m_puart->print('.');
 	m_puart->print(ip[3]);
+}
+
+bool ATDrvClass::qATCWSAP(String &List,uint8_t pattern) 
+{
+    if (!pattern) {
+        return false;
+    }
+    rx_empty();
+    switch(pattern)
+    {
+        case 1 :
+            m_puart->println(F("AT+CWSAP_DEF?"));
+
+            break;
+        case 2:
+            m_puart->println(F("AT+CWSAP_CUR?"));
+            break;
+        default:
+            m_puart->println(F("AT+CWSAP?"));
+    }
+    return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", List, WL_CONNECT_TIMEOUT);
+
+}
+
+bool ATDrvClass::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn,uint8_t pattern)
+{
+    String data;
+    if (!pattern) {
+        return false;
+    }
+    rx_empty();
+    switch(pattern){
+         case 1 :
+            m_puart->print(F("AT+CWSAP_DEF=\""));
+
+            break;
+        case 2:
+            m_puart->print(F("AT+CWSAP_CUR=\""));
+            break;
+        default:
+            m_puart->print(F("AT+CWSAP=\""));
+
+    }
+    m_puart->print(ssid);
+    m_puart->print(F("\",\""));
+    m_puart->print(pwd);
+    m_puart->print(F("\","));
+    m_puart->print(chl);
+    m_puart->print(F(","));
+    m_puart->println(ecn);
+    
+    data = recvString("OK", "ERROR", WL_CONNECT_TIMEOUT);
+    if (data.indexOf("OK") != -1) {
+        return true;
+    }
+    return false;
 }
 
 ATDrvClass atDrv;

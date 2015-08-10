@@ -30,6 +30,7 @@ extern "C" {
 #include "IPAddress.h"
 #include "WiFiESPClient.h"
 #include "WiFiESPServer.h"
+#include "utility/at_drv.h"
 
 class WiFiESPClass
 {
@@ -228,9 +229,16 @@ public:
      *          else error code
      */
     int hostByName(const char* aHostname, IPAddress& aResult);
-
+	
+	bool isAccessPoint();
+	bool setAPMode();
+	bool setStationMode();
+	bool setAPconfig(const char* SSID, uint8_t SSIDLen, const char* password, uint8_t passlen, uint8_t channel, uint8_t encryption);
+	bool getAPconfig(char* SSID, char* password, uint8_t *channel, uint8_t *encryption);
+	
     friend class WiFiESPClient;
     friend class WiFiESPServer;
+	friend class ATDrvClass;
 };
 
 extern WiFiESPClass WiFiESP;

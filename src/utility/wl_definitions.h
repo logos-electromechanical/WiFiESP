@@ -39,7 +39,7 @@
 // Maximum size of a SSID list
 #define WL_NETWORKS_LIST_MAXNUM	10
 // Maxmium number of socket
-#define	MAX_SOCK_NUM		4
+#define	MAX_SOCK_NUM		5
 #define NO_SOCKET_AVAIL     255
 // Socket not available constant
 #define SOCK_NOT_AVAIL  255

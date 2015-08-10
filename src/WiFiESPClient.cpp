@@ -39,32 +39,29 @@ WiFiESPClient::WiFiESPClient(uint8_t sock) : _sock(sock) {
 }
 
 int WiFiESPClient::connect(const char* host, uint16_t port) {
-	IPAddress remote_addr;
-	if (WiFiESP.hostByName(host, remote_addr))
-	{
-		return connect(remote_addr, port);
-	}
-	return 0;
+	_sock = getFirstSocket();
+    if (_sock != NO_SOCKET_AVAIL) {
+    	serverESPDrv.startClient((char *)host, port, _sock);
+    	WiFiESP._state[_sock] = _sock;
+    	if (!connected()) {
+    		return 0;
+    	}
+    } else {
+    	Serial.println("No Socket available");
+    	return 0;
+    }
+    return 1;
 }
 
 int WiFiESPClient::connect(IPAddress ip, uint16_t port) {
     _sock = getFirstSocket();
-    if (_sock != NO_SOCKET_AVAIL)
-    {
-    	ServerESPDrv::startClient(uint32_t(ip), port, _sock);
-    	WiFiESPClass::_state[_sock] = _sock;
-
-    	unsigned long start = millis();
-
-    	// wait 4 second for the connection to close
-    	while (!connected() && millis() - start < 10000)
-    		delay(1);
-
-    	if (!connected())
-       	{
+    if (_sock != NO_SOCKET_AVAIL) {
+    	serverESPDrv.startClient(uint32_t(ip), port, _sock);
+    	WiFiESP._state[_sock] = _sock;
+    	if (!connected()) {
     		return 0;
     	}
-    }else{
+    } else {
     	Serial.println("No Socket available");
     	return 0;
     }
@@ -88,16 +85,16 @@ size_t WiFiESPClient::write(const uint8_t *buf, size_t size) {
   }
 
 
-  if (!ServerESPDrv::sendData(_sock, buf, size))
+  if (!serverESPDrv.sendData(_sock, buf, size))
   {
 	  setWriteError();
       return 0;
   }
-  if (!ServerESPDrv::checkDataSent(_sock))
+  /*if (!ServerESPDrv::checkDataSent(_sock))
   {
 	  setWriteError();
       return 0;
-  }
+  }*/
 
   return size;
 }
@@ -105,7 +102,7 @@ size_t WiFiESPClient::write(const uint8_t *buf, size_t size) {
 int WiFiESPClient::available() {
   if (_sock != 255)
   {
-      return ServerESPDrv::availData(_sock);
+      return serverESPDrv.availData(_sock);
   }
    
   return 0;
@@ -116,7 +113,7 @@ int WiFiESPClient::read() {
   if (!available())
     return -1;
 
-  ServerESPDrv::getData(_sock, &b);
+  serverESPDrv.getData(_sock, &b);
   return b;
 }
 
@@ -125,9 +122,9 @@ int WiFiESPClient::read(uint8_t* buf, size_t size) {
   // sizeof(size_t) is architecture dependent
   // but we need a 16 bit data type here
   uint16_t _size = size;
-  if (!ServerESPDrv::getDataBuf(_sock, buf, &_size))
+  if (!serverESPDrv.getDataBuf(_sock, buf, &_size))
       return -1;
-  return 0;
+  return _size;
 }
 
 int WiFiESPClient::peek() {
@@ -135,7 +132,7 @@ int WiFiESPClient::peek() {
 	  if (!available())
 	    return -1;
 
-	  ServerESPDrv::getData(_sock, &b, 1);
+	  serverESPDrv.getData(_sock, &b, 1);
 	  return b;
 }
 
@@ -149,8 +146,8 @@ void WiFiESPClient::stop() {
   if (_sock == 255)
     return;
 
-  ServerESPDrv::stopClient(_sock);
-  WiFiESPClass::_state[_sock] = NA_STATE;
+  serverESPDrv.stopClient(_sock);
+  WiFiESP._state[_sock] = NA_STATE;
 
   int count = 0;
   // wait maximum 5 secs for the connection to close
@@ -175,10 +172,10 @@ uint8_t WiFiESPClient::connected() {
 }
 
 uint8_t WiFiESPClient::status() {
-    if (_sock == 255) {
+  if (_sock == 255) {
     return CLOSED;
   } else {
-    return ServerESPDrv::getClientState(_sock);
+    return serverESPDrv.getClientState(_sock);
   }
 }
 
@@ -190,7 +187,7 @@ WiFiESPClient::operator bool() {
 uint8_t WiFiESPClient::getFirstSocket()
 {
     for (int i = 0; i < MAX_SOCK_NUM; i++) {
-      if (WiFiESPClass::_state[i] == NA_STATE)
+      if (WiFiESP._state[i] == NA_STATE)
       {
           return i;
       }

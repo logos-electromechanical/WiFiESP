@@ -112,6 +112,10 @@ class ATDrvClass {
     bool 	eATPING(String ip);
     bool 	sATCIPSTO(uint32_t timeout);
 	bool 	qCIPBUFSTATUS(uint8_t mux_id);
+    bool 	qATCWSAP(String &List,uint8_t pattern=3); 
+    bool 	sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn,uint8_t pattern=3);
+	
+	bool 	parseStatus(uint8_t mux, uint8_t *linkStat, String &type, String &remoteIP, uint16_t *remotePort, uint16_t *localPort, uint8_t *linkType);
 	
 	int16_t	available(uint8_t mux_id);
 	int16_t	availableTX(uint8_t mux_id);

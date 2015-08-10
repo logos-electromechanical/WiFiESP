@@ -35,13 +35,7 @@ WiFiESPServer::WiFiESPServer(uint16_t port)
 
 void WiFiESPServer::begin()
 {
-    uint8_t _sock = WiFiESP.getSocket();
-    if (_sock != NO_SOCKET_AVAIL)
-    {
-        ServerESPDrv::startServer(_port, _sock);
-        WiFiESP._server_port[_sock] = _port;
-        WiFiESP._state[_sock] = _sock;
-    }
+	serverESPDrv.startServer(_port, 0, TCP_MODE);
 }
 
 WiFiESPClient WiFiESPServer::available(byte* status)
@@ -78,9 +72,12 @@ WiFiESPClient WiFiESPServer::available(byte* status)
 }
 
 uint8_t WiFiESPServer::status() {
-    return ServerESPDrv::getServerState(0);
+    return serverESPDrv.getServerState(0);
 }
 
+uint8_t WiFiESPServer::status(uint8_t sock) {
+    return serverESPDrv.getServerState(sock);
+}
 
 size_t WiFiESPServer::write(uint8_t b)
 {
@@ -105,4 +102,8 @@ size_t WiFiESPServer::write(const uint8_t *buffer, size_t size)
         }
     }
     return n;
+}
+
+void WiFiESPServer::stop(void) {
+	serverESPDrv.stopServer(_port);
 }

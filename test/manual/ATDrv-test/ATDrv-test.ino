@@ -54,10 +54,12 @@ void setup() {
 void loop() {
   int8_t selection;
   char c;
-  uint8_t mode, mode1, mode2, mux, shellCnt = 0;
+  uint8_t mode, mode1, mode2, mux, linkStat, shellCnt = 0;
   uint32_t timeout, port;
   String retString, inString1, inString2, inString3;
   IPAddress ip, gateway, subnet;
+  uint16_t localport, remoteport;
+  String protocol, remotehost;
 
   while(Serial.available()) Serial.read();
   Serial.println(F("Enter 0 for list of commands"));
@@ -97,7 +99,8 @@ void loop() {
       Serial.println(F("26) execute AT+PING"));
       Serial.println(F("27) set AT+CIPSTO (time to live)"));
       Serial.println(F("28) query AT+CIPBUFSTATUS"));
-      Serial.println(F("29) open line until +++ is entered"));
+      Serial.println(F("29) parse the response from AT_CIPSTATUS"));
+      Serial.println(F("30) open line until +++ is entered"));
       break;
     case 1:
       Serial.println(F("Executing AT command"));
@@ -460,6 +463,20 @@ void loop() {
       Serial.print(F("Stop time: ")); Serial.println(millis());
       break;
     case 29:
+      Serial.println(F("Fetching and parsing AT+CIPSTATUS output"));
+      Serial.println(F("Enter the desired mux to check"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      mux = Serial.parseInt();
+      Serial.print(F("Start time: ")); Serial.println(millis());
+      Serial.println(atDrv.parseStatus(mux, &linkStat, protocol, remotehost, &remoteport, &localport, &mode));
+      Serial.print(F("Stop time: ")); Serial.println(millis());
+      Serial.print(F("Protocol: ")); Serial.println(protocol);
+      Serial.print(F("Remote host: ")); Serial.println(remotehost);
+      Serial.print(F("Remote port: ")); Serial.println(remoteport);
+      Serial.print(F("Local port: ")); Serial.println(localport);
+      Serial.print(F("Mode: ")); Serial.println(mode);
+    case 30:
       Serial.println(F("Entering shell mode. Type +++ to exit"));
       while (shellCnt < 3) {
         if (Serial1.available()) Serial.print((char)Serial1.read());

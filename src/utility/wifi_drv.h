@@ -235,6 +235,13 @@ public:
      * result: version as string with this format a.b.c
      */
     static const char* getFwVersion();
+	
+	bool isAccessPoint();
+	bool setAPMode();
+	bool setStationMode();
+	bool setAPconfig(const char* SSID, uint8_t SSIDLen, const char* password, uint8_t passlen, uint8_t channel, uint8_t encryption);
+	bool getAPconfig(char* SSID, char* passwd, uint8_t *channel, uint8_t *encryption);
+
 
     friend class WiFiESPUDP;
 

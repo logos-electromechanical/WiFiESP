@@ -50,6 +50,7 @@ public:
     static void startClient(char * host, uint16_t port, uint8_t sock, uint8_t protMode=TCP_MODE);
 
     static void stopClient(uint8_t sock);
+	static void stopServer(uint16_t port);
                                                                                   
     static uint8_t getServerState(uint8_t sock);
 
@@ -68,6 +69,7 @@ public:
     static uint16_t availData(uint8_t sock);
 
     static uint8_t checkDataSent(uint8_t sock);
+	
 };
 
 extern ServerESPDrv serverESPDrv;
