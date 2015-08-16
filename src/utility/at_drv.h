@@ -29,7 +29,7 @@
 #include <IPAddress.h>
 
 // Size memory buffers for each channel
-#define ESP_RX_BUFLEN 	1024
+#define ESP_RX_BUFLEN 	1500
 #define ESP_TX_BUFLEN	128
 
 // Select among _CUR, _DEF, and deprecated modes for certain AT commands

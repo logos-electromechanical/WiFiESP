@@ -52,6 +52,7 @@ void loop() {
   Serial.println(F("Enter 0 for list of commands"));
   while(Serial.available()) Serial.read();
   while (!Serial.available()) {
+    if (serialEventRun) serialEventRun();
     if (Serial1.available()) Serial.print((char *)Serial1.read());
   }
   selection = Serial.parseInt();

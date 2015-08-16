@@ -64,6 +64,7 @@ void loop() {
   while(Serial.available()) Serial.read();
   Serial.println(F("Enter 0 for list of commands"));
   while (!Serial.available()) {
+    if (serialEventRun) serialEventRun();
     if (Serial1.available()) Serial.print((char)Serial1.read());
   }
   selection = Serial.parseInt();
@@ -100,7 +101,9 @@ void loop() {
       Serial.println(F("27) set AT+CIPSTO (time to live)"));
       Serial.println(F("28) query AT+CIPBUFSTATUS"));
       Serial.println(F("29) parse the response from AT_CIPSTATUS"));
-      Serial.println(F("30) open line until +++ is entered"));
+      Serial.println(F("30) get access point configuration"));
+      Serial.println(F("31) set access point configuration"));
+      Serial.println(F("32) open line until +++ is entered"));
       break;
     case 1:
       Serial.println(F("Executing AT command"));
@@ -360,7 +363,6 @@ void loop() {
       while (Serial.available()) Serial.read();
       while (!Serial.available());
       inString1 = Serial.readString();
-      inString1.trim();
       Serial.println(F("Sending data"));
       Serial.print(F("Start time: ")); Serial.println(millis());
       Serial.println(atDrv.sATCIPSENDMultiple(mux, (const uint8_t *)inString1.c_str(), inString1.length()));
@@ -468,6 +470,12 @@ void loop() {
       while (Serial.available()) Serial.read();
       while (!Serial.available());
       mux = Serial.parseInt();
+      linkStat = 0;
+      protocol = "";
+      remotehost = "";
+      remoteport = 0;
+      localport = 0;
+      mode = 0;
       Serial.print(F("Start time: ")); Serial.println(millis());
       Serial.println(atDrv.parseStatus(mux, &linkStat, protocol, remotehost, &remoteport, &localport, &mode));
       Serial.print(F("Stop time: ")); Serial.println(millis());
@@ -476,7 +484,43 @@ void loop() {
       Serial.print(F("Remote port: ")); Serial.println(remoteport);
       Serial.print(F("Local port: ")); Serial.println(localport);
       Serial.print(F("Mode: ")); Serial.println(mode);
+      break;
     case 30:
+      Serial.println(F("Fetching access point configuration with AT+CWSAP?"));
+      Serial.println(F("Enter 1 for current value, 2 for default, or 3 for old-style"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      mode = Serial.parseInt();
+      Serial.println(atDrv.qATCWSAP(retString, mode));
+      Serial.println(retString);
+      break;
+    case 31:
+      Serial.println(F("Setting access point configuration with AT+CWSAP?"));
+      Serial.println(F("Enter the SSID"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      inString1 = Serial.readString();
+      inString1.trim();
+      Serial.println(F("Enter the password"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      inString2 = Serial.readString();
+      inString2.trim();
+      Serial.println(F("Enter the desired channel"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      mode1 = Serial.parseInt();
+      Serial.println(F("Enter the desired encryption"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      mode2 = Serial.parseInt();
+      Serial.println(F("Enter 1 for current value, 2 for default, or 3 for old-style"));
+      while (Serial.available()) Serial.read();
+      while (!Serial.available());
+      mode = Serial.parseInt();
+      Serial.println(atDrv.sATCWSAP(inString1, inString2, mode1, mode2, mode));
+      break;
+    case 32:
       Serial.println(F("Entering shell mode. Type +++ to exit"));
       while (shellCnt < 3) {
         if (Serial1.available()) Serial.print((char)Serial1.read());

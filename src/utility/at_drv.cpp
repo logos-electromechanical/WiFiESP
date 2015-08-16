@@ -21,6 +21,7 @@
  * THE SOFTWARE.
  */
  
+#include <Arduino.h> 
 #include "utility/at_drv.h"
 #include "WiFiESP.h"
 #include <avr/pgmspace.h>
@@ -63,6 +64,7 @@ void serialEvent1(void) {
 	if (IPDenable) {
 		// place incoming data in appropriate buffer
 		if(Serial1.find("+IPD,")) {
+			Serial.println(F("Getting some data in"));
 			mux = Serial1.parseInt();	// figure out which mux
 			Serial1.find(",");
 			uint16_t len = Serial1.parseInt();	// figure out how much data is inbound
