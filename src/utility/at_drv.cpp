@@ -89,6 +89,7 @@ void serialEvent1(void) {
 
 // member initialization
 HardwareSerial* 	ATDrvClass::m_puart = &Serial1;
+uint32_t			ATDrvClass::_baud = ESP_DEFAULT_SPEED;
 uint16_t 		 	ATDrvClass::_rx_buffer_head[MAX_SOCK_NUM];
 uint16_t  			ATDrvClass::_rx_buffer_tail[MAX_SOCK_NUM];
 uint16_t  			ATDrvClass::_tx_buffer_head[MAX_SOCK_NUM];
@@ -99,6 +100,7 @@ uint8_t  			ATDrvClass::txBufs[MAX_SOCK_NUM][ESP_TX_BUFLEN];
 void ATDrvClass::init(uint32_t baud)
 {
     m_puart->begin(baud);
+	_baud = baud;
 	m_puart->setTimeout(WL_AT_TIMEOUT);
     rx_empty();
 	sATCIPMUX(1);
@@ -310,6 +312,7 @@ bool ATDrvClass::eATRST(uint32_t timeout)
     rx_empty();
     m_puart->println(F("AT+RST"));
     ret = recvFind("OK", timeout);
+	if (ret) init(_baud);
 	IPDenable = true;
 	return ret;
 }
@@ -410,7 +413,7 @@ bool ATDrvClass::qATCWJAP(String &ssid, uint8_t pattern)
             m_puart->println(F("AT+CWJAP?"));
     }
     ssid = recvString("OK", "No AP", WL_AT_TIMEOUT);
-    if (ssid.indexOf("OK") != -1 || ssid.indexOf("No AP") != -1) {
+    if (ssid.indexOf("OK") != -1 && ssid.indexOf("No AP") == -1) {
 		IPDenable = true;
         return true;
     }
@@ -877,8 +880,8 @@ bool ATDrvClass::qCIPBUFSTATUS(uint8_t mux_id) {
 bool ATDrvClass::parseStatus(uint8_t mux, uint8_t *linkStat, String &type, String &remoteIP, uint16_t *remotePort, uint16_t *localPort, uint8_t *linkType) {
 	String list;
 	if (atDrv.eATCIPSTATUS(list)) {
-		if (list.indexOf('+') != -1) {
-			list = list.substring(list.indexOf('+') + 1);
+		if (list.indexOf(':') != -1) {
+			list = list.substring(list.indexOf(':') + 1);
 			if (linkStat) *linkStat = (uint8_t)list.toInt();
 			while(list.indexOf('+') != -1) {									// Is there another return line to check?
 				list = list.substring(list.indexOf('+'));

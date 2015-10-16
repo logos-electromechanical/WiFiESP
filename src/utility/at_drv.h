@@ -32,6 +32,9 @@
 #define ESP_RX_BUFLEN 	1500
 #define ESP_TX_BUFLEN	128
 
+// default baud rate
+#define ESP_DEFAULT_SPEED 115200
+
 // Select among _CUR, _DEF, and deprecated modes for certain AT commands
 #define ESP_AT_CUR		1
 #define ESP_AT_DEF		2
@@ -40,7 +43,7 @@
 class ATDrvClass {
 	public:
 	
-	void init(uint32_t baud = 9600);
+	void init(uint32_t baud = ESP_DEFAULT_SPEED);
 	
 	/* 
      * Empty the buffer or UART RX.
@@ -133,6 +136,7 @@ class ATDrvClass {
     
 	private:
     static HardwareSerial *m_puart; /* The UART to communicate with ESP8266 */
+	static uint32_t _baud;
 	static uint16_t _rx_buffer_head[MAX_SOCK_NUM];
 	static uint16_t _rx_buffer_tail[MAX_SOCK_NUM];
 	static uint16_t _tx_buffer_head[MAX_SOCK_NUM];
