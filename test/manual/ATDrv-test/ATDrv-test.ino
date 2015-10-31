@@ -46,9 +46,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Starting up...");
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   delay(100);
-  atDrv.init(9600);
+  atDrv.init(115200);
 }
 
 void loop() {

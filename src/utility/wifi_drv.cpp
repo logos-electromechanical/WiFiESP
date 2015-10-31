@@ -56,7 +56,7 @@ void WiFiESPDrv::wifiDriverInit()
 	// Check that the ESP chip is active & reboot if not
 	// Put ESP into station mode & activate DHCP
 	// Turn on the mux for multiple connections
-	atDrv.init(9600);
+	atDrv.init(115200); // new default speed
 	while(!atDrv.eAT()) {
 		WARN("Unable to connect to ESP8266, attempting to restart");
 		atDrv.eATRST(WL_CONNECT_TIMEOUT);
