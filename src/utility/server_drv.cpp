@@ -60,10 +60,10 @@ void ServerESPDrv::startClient(uint32_t ipAddress, uint16_t port, uint8_t sock, 
 	String type;
 	IPAddress host = ipAddress;
 	if (protMode == TCP_MODE) {
-		type = "\"TCP\"";
+		type = "TCP";
 	} else if (protMode == UDP_MODE) {
-		type = "\"UDP\"";
-	} else
+		type = "UDP";
+	} 
 	atDrv.sATCIPSTARTMultiple(sock, type, host, port);
 }
 
@@ -73,10 +73,10 @@ void ServerESPDrv::startClient(char * host, uint16_t port, uint8_t sock, uint8_t
 	String type;
 	String _host = host;
 	if (protMode == TCP_MODE) {
-		type = "\"TCP\"";
+		type = "TCP";
 	} else if (protMode == UDP_MODE) {
-		type = "\"UDP\"";
-	} else
+		type = "UDP";
+	}
 	atDrv.sATCIPSTARTMultiple(sock, type, _host, port);
 }
 
@@ -120,7 +120,7 @@ uint8_t ServerESPDrv::getClientState(uint8_t sock)
 
 uint16_t ServerESPDrv::availData(uint8_t sock)
 {
-	atDrv.available(sock);
+	return atDrv.available(sock);
 }
 
 bool ServerESPDrv::getData(uint8_t sock, uint8_t *data, uint8_t peek)
