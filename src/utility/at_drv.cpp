@@ -954,8 +954,8 @@ int16_t ATDrvClass::getBuf(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 
 int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 	int16_t count = 0;
-	if (available(mux_id)) {
-		while (available(mux_id) && (count < len)) {
+	if (availableTX(mux_id)) {
+		while (availableTX(mux_id) && (count < len)) {
 			buf[count] = getCharTX(mux_id);
 			count++;
 		}
@@ -964,16 +964,18 @@ int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 }
 
 bool ATDrvClass::putCharRX(uint8_t mux_id, uint8_t c) {
-	if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_rx_buffer_head[mux_id] + 1) % ESP_RX_BUFLEN;
+	if ( i == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	// if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	rxBufs[mux_id][_rx_buffer_head[mux_id]] = c;
 	_rx_buffer_head[mux_id] = i;
 	return true;
 }
 
 bool ATDrvClass::putCharTX(uint8_t mux_id, uint8_t c){
-	if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_tx_buffer_head[mux_id] + 1) % ESP_TX_BUFLEN;
+	if ( i == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	// if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	txBufs[mux_id][_tx_buffer_head[mux_id]] = c;
 	_tx_buffer_head[mux_id] = i;
 	return true;
@@ -1011,7 +1013,6 @@ bool ATDrvClass::qATCWSAP(String &List,uint8_t pattern)
     {
         case 1 :
             m_puart->println(F("AT+CWSAP_CUR?"));
-
             break;
         case 2:
             m_puart->println(F("AT+CWSAP_DEF?"));
@@ -1058,4 +1059,3 @@ bool ATDrvClass::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn,uint
 }
 
 ATDrvClass atDrv;
-
