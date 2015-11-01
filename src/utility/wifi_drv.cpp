@@ -360,5 +360,4 @@ bool WiFiESPDrv::getAPconfig(char* SSID, char* passwd, uint8_t *channel, uint8_t
 	} else return false;
 }
 
-
 WiFiESPDrv wifiESPDrv;
