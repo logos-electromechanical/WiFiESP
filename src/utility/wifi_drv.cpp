@@ -143,8 +143,8 @@ void WiFiESPDrv::getIpAddress(IPAddress& ip)
 	uint8_t i;
 	bool ret;
 	ret = atDrv.qATCIPSTAIP(cIP, ESP_AT_CUR);
-	if (ret && (cIP.indexOf(':') != -1)) {
-		procS = cIP.substring(cIP.indexOf('"') + 1);	// grab the start of the IP address
+	if (ret && (cIP.indexOf('ip') != -1)) {
+		procS = cIP.substring(cIP.indexOf('ip') + 3);	// grab the start of the IP address
 		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
 			_localIp[i] = (uint8_t)procS.toInt();
 			procS = procS.substring(procS.indexOf('.') + 1);
@@ -155,12 +155,34 @@ void WiFiESPDrv::getIpAddress(IPAddress& ip)
 
  void WiFiESPDrv::getSubnetMask(IPAddress& mask)
  {
-	// No way I know of to get this, so do nothing
+	String cIP, procS;
+	uint8_t i;
+	bool ret;
+	ret = atDrv.qATCIPSTAIP(cIP, ESP_AT_CUR);
+	if (ret && (cIP.indexOf('netmask') != -1)) {
+		procS = cIP.substring(cIP.indexOf('netmask') + 3);
+		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
+			_subnetMask[i] = (uint8_t)procS.toInt();
+			procS = procS.substring(procS.indexOf('.') + 1);
+		}
+	}
+	mask = _subnetMask;
  }
 
- void WiFiESPDrv::getGatewayIP(IPAddress& ip)
+ void WiFiESPDrv::getGatewayIP(IPAddress& gateway)
  {
-	// No way I know of to get this, so do nothing
+	String cIP, procS;
+	uint8_t i;
+	bool ret;
+	ret = atDrv.qATCIPSTAIP(cIP, ESP_AT_CUR);
+	if (ret && (cIP.indexOf('gateway') != -1)) {
+		procS = cIP.substring(cIP.indexOf('gateway') + 3);
+		for (i = 0; i < WL_MAC_ADDR_LENGTH; i++) {
+			_gatewayIp[i] = (uint8_t)procS.toInt();
+			procS = procS.substring(procS.indexOf('.') + 1);
+		}
+	}
+	gateway = _gatewayIp;
  }
 
 const char* WiFiESPDrv::getCurrentSSID()
@@ -170,7 +192,7 @@ const char* WiFiESPDrv::getCurrentSSID()
 	bool ret;
 	ret = atDrv.qATCWJAP(cSSID, ESP_AT_CUR);
 	if (ret && (cSSID.indexOf(':') != -1)) {
-		_ssid = cSSID.substring(cSSID.indexOf(':'), cSSID.indexOf(','));
+		_ssid = cSSID.substring(cSSID.indexOf(':') + 1, cSSID.indexOf(','));
 		// trim off the leading and trailing quotation marks
 		_ssid.remove(_ssid.indexOf('"'), 1);
 		_ssid.remove(_ssid.indexOf('"'), 1);
@@ -337,6 +359,5 @@ bool WiFiESPDrv::getAPconfig(char* SSID, char* passwd, uint8_t *channel, uint8_t
 		} else return false;
 	} else return false;
 }
-
 
 WiFiESPDrv wifiESPDrv;

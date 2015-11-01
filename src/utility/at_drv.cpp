@@ -342,10 +342,10 @@ bool ATDrvClass::qATCWMODE(uint8_t *mode, uint8_t pattern)
     switch(pattern)
     {
         case ESP_AT_CUR:
-            m_puart->println(F("AT+CWMODE_DEF?"));
+            m_puart->println(F("AT+CWMODE_CUR?"));
             break;
         case ESP_AT_DEF:
-            m_puart->println(F("AT+CWMODE_CUR?"));
+            m_puart->println(F("AT+CWMODE_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CWMODE?"));
@@ -373,10 +373,10 @@ bool ATDrvClass::sATCWMODE(uint8_t mode, uint8_t pattern)
     switch(pattern)
     {
         case ESP_AT_CUR:
-            m_puart->print(F("AT+CWMODE_DEF="));
+            m_puart->print(F("AT+CWMODE_CUR="));
             break;
         case ESP_AT_DEF:
-            m_puart->print(F("AT+CWMODE_CUR="));
+            m_puart->print(F("AT+CWMODE_DEF="));
             break;
         default:
             m_puart->print(F("AT+CWMODE="));
@@ -404,10 +404,10 @@ bool ATDrvClass::qATCWJAP(String &ssid, uint8_t pattern)
     switch(pattern)
     {
         case ESP_AT_CUR:
-            m_puart->println(F("AT+CWJAP_DEF?"));
+            m_puart->println(F("AT+CWJAP_CUR?"));
             break;
         case ESP_AT_DEF:
-            m_puart->println(F("AT+CWJAP_CUR?"));
+            m_puart->println(F("AT+CWJAP_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CWJAP?"));
@@ -434,10 +434,10 @@ bool ATDrvClass::sATCWJAP(String ssid, String pwd,uint8_t pattern)
     switch(pattern)
     {
         case ESP_AT_CUR:
-            m_puart->print(F("AT+CWJAP_DEF=\""));
+            m_puart->print(F("AT+CWJAP_CUR=\""));
             break;
         case ESP_AT_DEF:
-            m_puart->print(F("AT+CWJAP_CUR=\""));
+            m_puart->print(F("AT+CWJAP_DEF=\""));
             break;
         default:
             m_puart->print(F("AT+CWJAP=\""));
@@ -491,10 +491,10 @@ bool ATDrvClass::qATCWDHCP(uint8_t *mode, uint8_t *en, uint8_t pattern)
     switch(pattern)
     {
         case ESP_AT_CUR:
-            m_puart->println(F("AT+CWDHCP_DEF?"));
+            m_puart->println(F("AT+CWDHCP_CUR?"));
             break;
         case ESP_AT_DEF:
-            m_puart->println(F("AT+CWDHCP_CUR?"));
+            m_puart->println(F("AT+CWDHCP_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CWDHCP?"));
@@ -523,11 +523,11 @@ bool ATDrvClass::sATCWDHCP(uint8_t mode, uint8_t en, uint8_t pattern)
     rx_empty();
     switch(pattern){
          case ESP_AT_CUR:
-            m_puart->print(F("AT+CWDHCP_DEF="));
+            m_puart->print(F("AT+CWDHCP_CUR="));
 
             break;
         case ESP_AT_DEF:
-            m_puart->print(F("AT+CWDHCP_CUR="));
+            m_puart->print(F("AT+CWDHCP_DEF="));
             break;
         default:
             m_puart->print(F("AT+CWDHCP="));
@@ -557,11 +557,11 @@ bool ATDrvClass::qATCIPSTAMAC(String &mac, uint8_t pattern)
     }
     switch(pattern){
          case ESP_AT_CUR:
-            m_puart->println(F("AT+CIPSTAMAC_DEF?"));
+            m_puart->println(F("AT+CIPSTAMAC_CUR?"));
 
             break;
         case ESP_AT_DEF:
-            m_puart->println(F("AT+CIPSTAMAC_CUR?"));
+            m_puart->println(F("AT+CIPSTAMAC_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CIPSTAMAC?"));
@@ -582,11 +582,11 @@ bool ATDrvClass::qATCIPSTAIP(String &ip, uint8_t pattern)
     }
     switch(pattern){
          case ESP_AT_CUR:
-            m_puart->println(F("AT+CIPSTA_DEF?"));
+            m_puart->println(F("AT+CIPSTA_CUR?"));
 
             break;
         case ESP_AT_DEF:
-            m_puart->println(F("AT+CIPSTA_CUR?"));
+            m_puart->println(F("AT+CIPSTA_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CIPSTA?"));
@@ -611,11 +611,11 @@ bool ATDrvClass::sATCIPSTAIP(uint8_t validParams, uint32_t local_ip, uint32_t ga
     }
     switch(pattern){
          case ESP_AT_CUR:
-            m_puart->print(F("AT+CIPSTA_DEF=\""));
+            m_puart->print(F("AT+CIPSTA_CUR=\""));
 
             break;
         case ESP_AT_DEF:
-            m_puart->print(F("AT+CIPSTA_CUR=\""));
+            m_puart->print(F("AT+CIPSTA_DEF=\""));
             break;
         default:
             m_puart->print(F("AT+CIPSTA=\""));
@@ -954,8 +954,8 @@ int16_t ATDrvClass::getBuf(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 
 int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 	int16_t count = 0;
-	if (available(mux_id)) {
-		while (available(mux_id) && (count < len)) {
+	if (availableTX(mux_id)) {
+		while (availableTX(mux_id) && (count < len)) {
 			buf[count] = getCharTX(mux_id);
 			count++;
 		}
@@ -964,16 +964,18 @@ int16_t ATDrvClass::getBufTX(uint8_t mux_id, uint8_t* buf, uint16_t len) {
 }
 
 bool ATDrvClass::putCharRX(uint8_t mux_id, uint8_t c) {
-	if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_rx_buffer_head[mux_id] + 1) % ESP_RX_BUFLEN;
+	if ( i == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	// if (_rx_buffer_head[mux_id] == _rx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	rxBufs[mux_id][_rx_buffer_head[mux_id]] = c;
 	_rx_buffer_head[mux_id] = i;
 	return true;
 }
 
 bool ATDrvClass::putCharTX(uint8_t mux_id, uint8_t c){
-	if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	uint16_t i = (_tx_buffer_head[mux_id] + 1) % ESP_TX_BUFLEN;
+	if ( i == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
+	// if (_tx_buffer_head[mux_id] == _tx_buffer_tail[mux_id]) return false;	// returns false if the buffer is full
 	txBufs[mux_id][_tx_buffer_head[mux_id]] = c;
 	_tx_buffer_head[mux_id] = i;
 	return true;
@@ -1010,11 +1012,10 @@ bool ATDrvClass::qATCWSAP(String &List,uint8_t pattern)
     switch(pattern)
     {
         case 1 :
-            m_puart->println(F("AT+CWSAP_DEF?"));
-
+            m_puart->println(F("AT+CWSAP_CUR?"));
             break;
         case 2:
-            m_puart->println(F("AT+CWSAP_CUR?"));
+            m_puart->println(F("AT+CWSAP_DEF?"));
             break;
         default:
             m_puart->println(F("AT+CWSAP?"));
@@ -1032,11 +1033,11 @@ bool ATDrvClass::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn,uint
     rx_empty();
     switch(pattern){
          case 1 :
-            m_puart->print(F("AT+CWSAP_DEF=\""));
+            m_puart->print(F("AT+CWSAP_CUR=\""));
 
             break;
         case 2:
-            m_puart->print(F("AT+CWSAP_CUR=\""));
+            m_puart->print(F("AT+CWSAP_DEF=\""));
             break;
         default:
             m_puart->print(F("AT+CWSAP=\""));
@@ -1058,4 +1059,3 @@ bool ATDrvClass::sATCWSAP(String ssid, String pwd, uint8_t chl, uint8_t ecn,uint
 }
 
 ATDrvClass atDrv;
-
