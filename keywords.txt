@@ -6,7 +6,7 @@
 # Library (KEYWORD1)
 #######################################
 
-WiFiESP		KEYWORD1	WiFiESP
+WiFiESP	KEYWORD1	WiFiESP
 WiFiESPUdp	KEYWORD1	WiFiESPUDPConstructor
 
 #######################################
@@ -38,14 +38,14 @@ localIP	KEYWORD2
 subnetMask	KEYWORD2
 gatewayIP	KEYWORD2
 SSID	KEYWORD2
-BSSID		KEYWORD2
+BSSID	KEYWORD2
 RSSI	KEYWORD2
 encryptionType	KEYWORD2
 getResult	KEYWORD2
 getSocket	KEYWORD2
 WiFiESPClient	KEYWORD2	WiFiESPClient
 WiFiESPServer	KEYWORD2	WiFiESPServer
-WiFiESPUDP		KEYWORD2	WiFiESPUDPConstructor
+WiFiESPUDP	KEYWORD2	WiFiESPUDPConstructor
 beginPacket	KEYWORD2
 endPacket	KEYWORD2
 parsePacket	KEYWORD2
